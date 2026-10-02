@@ -1,4 +1,4 @@
-﻿namespace EClaim.Domain;
+﻿namespace EClaim.Domain.Common;
 
 public abstract class BaseEntity
 {
