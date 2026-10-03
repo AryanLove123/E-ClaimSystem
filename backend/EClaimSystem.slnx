@@ -1,2 +1,6 @@
 <Solution>
+  <Project Path="EClaim.API/EClaim.API.csproj" />
+  <Project Path="EClaim.Application/EClaim.Application.csproj" />
+  <Project Path="EClaim.Domain/EClaim.Domain.csproj" />
+  <Project Path="EClaim.Infrastructure/EClaim.Infrastructure.csproj" />
 </Solution>
