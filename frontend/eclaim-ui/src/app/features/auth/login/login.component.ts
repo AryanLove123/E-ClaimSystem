@@ -8,7 +8,7 @@ import { Router, RouterLink } from '@angular/router';
   selector: 'app-login',
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './login.component.html',
-  styles: ``,
+  styleUrl: '../auth.scss',
 })
 export class LoginComponent {
   fb = inject(FormBuilder);

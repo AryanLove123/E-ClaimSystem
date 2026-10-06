@@ -1,14 +1,15 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { CommonModule } from '@angular/common';
 
 
 export type RequestStatus = 'loading' | 'success' | 'error';
 @Component({
   selector: 'app-verify-email',
-  imports: [],
+  imports: [CommonModule, RouterLink],
   templateUrl: './verify-email.component.html',
-  styles: ``,
+  styleUrl: '../auth.scss',
 })
 export class VerifyEmailComponent implements OnInit {
   route = inject(ActivatedRoute);

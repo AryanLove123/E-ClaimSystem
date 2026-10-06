@@ -10,7 +10,10 @@
             <label for="password">Password</label>
             <input type="password" id="password" formControlName="password" class="form-control">
         </div>
-        <p class="error">@if (errorMessage()) { {{ errorMessage() }} }</p>
+        @if (errorMessage()){
+            <p class="error"> {{ errorMessage() }}</p>
+        }
+        
         <button type="submit" class="btn btn-primary">Login</button>
 
         <p class="switch">No account? <a routerLink="/register">Register</a></p>
