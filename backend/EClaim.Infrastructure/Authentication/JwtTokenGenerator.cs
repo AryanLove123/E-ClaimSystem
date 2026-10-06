@@ -3,7 +3,6 @@ using EClaim.Application.Interfaces;
 using UserEntity = EClaim.Domain.Entities.User;
 using SecurityClaim =  System.Security.Claims.Claim;
 using ClaimTypes = System.Security.Claims.ClaimTypes;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -12,12 +11,10 @@ namespace EClaim.Infrastructure.Authentication;
 
 public class JwtTokenGenerator : IJwtTokenGenerator
 {
-    private IConfiguration _config;
     private JwtSettings _settings;
 
-    public JwtTokenGenerator(IConfiguration config, IOptions<JwtSettings> settings)
+    public JwtTokenGenerator(IOptions<JwtSettings> settings)
     {
-        _config = config;
         _settings = settings.Value;
     }
     public (string token, DateTime expiresAt) GenerateToken(UserEntity user)

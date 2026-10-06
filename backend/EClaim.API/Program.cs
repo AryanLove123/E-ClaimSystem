@@ -21,14 +21,14 @@ builder.Services.AddDbContext<EClaimDbContext>(options =>
 });
 
 builder.Services.AddScoped<IEClaimDbContext>(sp => sp.GetRequiredService<EClaimDbContext>());
-// Add services to the container.
-
-builder.Services.AddScoped<IAuthService,AuthService>();
 
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+// Add services to the container.
+builder.Services.AddScoped<IAuthService,AuthService>();
 
 builder.Services.AddControllers();
 
@@ -37,6 +37,8 @@ if(emailProvider.Equals("Brevo", StringComparison.OrdinalIgnoreCase))
 {
     builder.Services.AddHttpClient<IEmailService, BrevoEmailService>();
 }
+
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>() ?? new JwtSettings();
 
@@ -88,7 +90,19 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+const string AngularCorsPolicy = "AngularDevClient";
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new [] {"http://localhost:4200"};
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(AngularCorsPolicy, policy =>
+    {
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 
@@ -108,6 +122,7 @@ if (app.Environment.IsDevelopment())
 }
 
 // app.UseHttpsRedirection();
+app.UseCors(AngularCorsPolicy);
 
 app.UseAuthentication();
 app.UseAuthorization();

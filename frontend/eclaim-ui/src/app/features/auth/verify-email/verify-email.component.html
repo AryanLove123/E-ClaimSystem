@@ -1,0 +1,21 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <h1>Email verification</h1>
+
+    @switch (status()) {
+      @case ('loading') {
+        <p class="loading">Verifying…</p>
+      }
+      @case ('success') {
+        <p class="success">{{ message() }}</p>
+      }
+      @case ('error') {
+        <p class="error">{{ message() }}</p>
+      }
+    }
+
+    <p class="switch">
+      <a routerLink="/login">Back to sign in</a>
+    </p>
+  </div>
+</div>
