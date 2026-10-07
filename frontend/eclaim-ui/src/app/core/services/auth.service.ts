@@ -15,12 +15,11 @@ interface StoredSession {
 }
 
 const STORAGE_KEY = 'eclaim_session';
-
+const baseUrl = `${environment.apiUrl}/Auth`;
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  baseUrl = `${environment.apiUrl}/Auth`;
   sessionSignal = signal<StoredSession | null>(this.readSession());
 
   isAuthenticated = computed(() => !!this.sessionSignal());
@@ -30,11 +29,11 @@ export class AuthService {
   constructor(private http: HttpClient){}
 
   register(payload: { fullName: string; email: string; password: string; phoneNumber?: string }): Observable<ApiResponse<{userId: number}>> {
-    return this.http.post<ApiResponse<{userId: number}>>(`${this.baseUrl}/register`, payload);
+    return this.http.post<ApiResponse<{userId: number}>>(`${baseUrl}/register`, payload);
   }
 
   login(payload: { email: string; password: string }): Observable<ApiResponse<AuthResponse>> {
-    return this.http.post<ApiResponse<AuthResponse>>(`${this.baseUrl}/login`, payload).pipe(
+    return this.http.post<ApiResponse<AuthResponse>>(`${baseUrl}/login`, payload).pipe(
       // On successful login, store the session in localStorage and update the signal
       tap(response => {
         if (response.success && response.data) {
@@ -46,7 +45,12 @@ export class AuthService {
   }
 
   verifyEmail(payload: { email: string, token: string }): Observable<ApiResponse<object>> {
-    return this.http.post<ApiResponse<object>>(`${this.baseUrl}/verify-email`, payload);
+    return this.http.post<ApiResponse<object>>(`${baseUrl}/verify-email`, payload);
+  }
+
+  logout(): void{
+    localStorage.removeItem(STORAGE_KEY);
+    this.sessionSignal.set(null);
   }
 
   getToken(): string | null {

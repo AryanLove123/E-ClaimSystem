@@ -1,3 +1,4 @@
+export type ClaimType = 'Vehicle'| 'Health'| 'Property'| 'Travel'
 export interface ClaimDocument {
   id: number;
   originalFileName: string;
@@ -12,7 +13,7 @@ export interface Claim {
   claimantId: number;
   claimantName: string;
   policyNumber: string;
-  claimType: string;
+  claimType: ClaimType;
   incidentDate: string;
   description: string;
   location: string;
@@ -31,7 +32,7 @@ export interface Claim {
 export interface ClaimFilter {
   claimNumber?: string;
   policyNumber?: string;
-  claimType?: string;
+  claimType?: ClaimType;
   status?: string;
   severity?: string;
   fromDate?: string;
