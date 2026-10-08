@@ -27,6 +27,8 @@ builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
+builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+
 // Add services to the container.
 builder.Services.AddScoped<IAuthService,AuthService>();
 builder.Services.AddScoped<IClaimService, ClaimService>();

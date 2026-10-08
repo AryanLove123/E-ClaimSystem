@@ -6,7 +6,7 @@ export interface ApiResponse<T> {
   traceId?: string;
 }
 
-export interface PageResult<T> {
+export interface PagedResult<T> {
   items: T[];
   totalCount: number;
   pageSize: number;

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using EClaim.Domain.Enums;
 using EClaim.Application.Mappings;
 using EClaim.Domain.Exceptions;
+using EClaim.Domain.Entities;
 
 namespace EClaim.Application.Services;
 
@@ -13,11 +14,13 @@ public class ClaimService : IClaimService
 {
     private IEClaimDbContext _db;
     private IWorkflowService _workflowService;
+    private IFileStorageService _fileStorageService;
 
-    public ClaimService(IEClaimDbContext db, IWorkflowService workflowService)
+    public ClaimService(IEClaimDbContext db, IWorkflowService workflowService, IFileStorageService fileStorageService)
     {
         _db = db;
         _workflowService = workflowService;
+        _fileStorageService = fileStorageService;
     }
 
     private static void EnsureCanView(ClaimEntity claim, CurrentUser currentUser)
@@ -33,6 +36,28 @@ public class ClaimService : IClaimService
 
         if (!canView)
             throw new ForbiddenAccessException("You do not have access to this claim.");
+    }
+
+    private static void EnsureAssignedAdjuster(ClaimEntity claim, int adjusterId)
+    {
+        if(claim.AssignedAdjusterId != adjusterId)
+        {
+            throw new ForbiddenAccessException("You are not the assigned adjuster for this claim");
+        }
+    }
+
+    private static void EnsureAssignedApprover(ClaimEntity claim, int approverId)
+    {
+        if(claim.AssignedApproverId != approverId)
+        {
+            throw new ForbiddenAccessException("You are not the assigned approver for this claim");
+        }
+    }
+
+    private static void EnsureOwnedByClaimant(ClaimEntity claim, int claimantId)
+    {
+        if (claim.ClaimantId != claimantId)
+            throw new ForbiddenAccessException("You can only act on your own claims.");
     }
 
     private IQueryable<ClaimEntity> ClaimsWithIncludes() =>
@@ -181,5 +206,240 @@ public class ClaimService : IClaimService
             PageNumber = filter.PageNumber,
             PageSize = filter.PageSize
         };
+    }
+
+    public async Task<ClaimDocumentDto> UploadDocumentAsync(int claimId, int userId, Stream fileStream, string fileName, string contentType, long fileSize, CancellationToken ct = default)
+    {
+        var claim = await _db.Claims.FirstOrDefaultAsync(c => c.Id == claimId, ct) 
+            ?? throw new NotFoundException("Claim", claimId);
+
+        if(!_fileStorageService.IsAllowedFile(fileName, contentType, fileSize))
+        {
+            throw new ValidationException("Only files with size 10Mb and format PDF, JPG, PNG are allowed");
+        }
+
+        var storedName = await _fileStorageService.SaveFileAsync(fileStream, fileName, ct);
+
+        var doc = new ClaimDocument
+        {
+            ClaimId = claimId,
+            OriginalFileName = fileName,
+            StoredFileName = storedName,
+            ContentType = contentType,
+            FileSizeBytes = fileSize,
+            UploadedByUserId = userId
+        };
+
+        _db.ClaimDocuments.Add(doc);
+        await _db.SaveChangesAsync(ct);
+
+        return doc.ToDto();
+    }
+
+    public async Task<ClaimDto> StartReviewAsync(int claimId, int adjusterId, CancellationToken ct = default)
+    {
+        var claim = await ClaimsWithIncludes().FirstOrDefaultAsync(c => c.Id == claimId, ct)
+            ?? throw new NotFoundException("Claim", claimId);
+
+        EnsureAssignedAdjuster(claim, adjusterId);
+
+        if(claim.Status != ClaimStatus.UnderReview)
+        {
+            throw new InvalidWorkflowTransitionException("Claim it not awaiting adjuster review.");
+        }
+        return claim.ToDto();
+    }
+
+    public async Task<ClaimDto> AdjustClaimAsync(int claimId, int adjusterId, AdjustClaimRequest request, CancellationToken ct = default)
+    {
+        var claim = await ClaimsWithIncludes().FirstOrDefaultAsync(c => c.Id == claimId, ct)
+            ?? throw new NotFoundException("Claim", claimId);
+
+        EnsureAssignedAdjuster(claim,adjusterId);
+
+        if(claim.Status != ClaimStatus.UnderReview)
+        {
+            throw new InvalidWorkflowTransitionException("Claim is not awaiting adjuster review.");
+        }
+
+        var oldAmount = claim.AdjustedAmount?.ToString() ?? "null";
+        claim.AdjustedAmount = request.AdjustedAmount;
+        claim.Status = ClaimStatus.UnderAdjustment;
+        claim.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(ct);
+        return claim.ToDto();
+    }
+
+    public async Task<ClaimDto> RequestAdditionalDocumentsAsync(int claimId, int adjusterId, DocumentsRequest request, CancellationToken ct = default)
+    {
+        var claim = await ClaimsWithIncludes().FirstOrDefaultAsync(c => c.Id == claimId, ct)
+            ?? throw new NotFoundException("Claim", claimId);
+
+        EnsureAssignedAdjuster(claim, adjusterId);
+
+        if (claim.Status is not (ClaimStatus.UnderReview or ClaimStatus.UnderAdjustment))
+            throw new InvalidWorkflowTransitionException("Additional documents can only be requested while under review/adjustment.");
+
+        var oldStatus = claim.Status;
+        claim.Status = ClaimStatus.AdditionalDocumentsRequired;
+        claim.UpdatedAt = DateTime.UtcNow;
+
+        await _workflowService.PauseWorkflowAsync(claimId, request.Comments, ct);
+        await _db.SaveChangesAsync(ct);
+
+        return claim.ToDto();
+    }
+
+    public async Task<ClaimDto> ResubmitAfterDocumentAsync(int claimId, int claimantId, CancellationToken ct = default)
+    {
+        var claim = await ClaimsWithIncludes().FirstOrDefaultAsync(c => c.Id == claimId, ct)
+            ?? throw new NotFoundException("Claim", claimId);
+
+        EnsureOwnedByClaimant(claim, claimantId);
+
+        if(claim.Status != ClaimStatus.AdditionalDocumentsRequired)
+        {
+            throw new InvalidWorkflowTransitionException("Claim is not awaiting additional documents.");
+        }
+
+        var oldStaus = claim.Status;
+        claim.Status = ClaimStatus.UnderReview;
+        claim.UpdatedAt = DateTime.UtcNow;
+
+        await _workflowService.ResumeWorkflowAsync(claimId,ct);
+        await _db.SaveChangesAsync(ct);
+
+        return claim.ToDto();
+    }
+
+    public async Task<ClaimDto> CompleteAdjusterReviewAsync(int claimId, int adjusterId, ApprovalDecisionRequest request, CancellationToken ct = default)
+    {
+        var claim = await ClaimsWithIncludes().FirstOrDefaultAsync(c => c.Id == claimId, ct)
+            ?? throw new NotFoundException("Claim", claimId);
+
+        EnsureAssignedAdjuster(claim, adjusterId);
+
+        if (claim.Status is not (ClaimStatus.UnderReview or ClaimStatus.UnderAdjustment))
+            throw new InvalidWorkflowTransitionException("Claim is not awaiting adjuster completion.");
+
+        //Get the current step for this claimworkflow
+        var currentStep = await _workflowService.GetCurrentStepAsync(claimId,ct) ?? throw new NotFoundException("Current workflow step for claim", claimId);
+
+        var oldStatus = claim.Status;
+
+        var completedStep = await _workflowService.CompleteStepAsync(currentStep.Id,adjusterId, request.Comments, ct);
+        var nextStep = await _workflowService.GetCurrentStepAsync(claim.Id,ct);
+
+        if(nextStep != null)
+        {
+            var roleName = nextStep.WorkflowStep.ResponsibleRole switch
+            {
+                ClaimStepRole.Approver or ClaimStepRole.SeniorApprover => RoleType.Approver,
+                _ => RoleType.Adjuster
+            };
+
+            var assignee = await _db.Users.Include(u => u.Role)
+                .Where(u => u.Role.Name == roleName && u.IsActive)
+                .OrderBy(u => _db.ClaimWorkflowSteps.Count(s => s.AssignedToUserId == u.Id && s.Status == WorkflowStepStatus.Current))
+                .FirstOrDefaultAsync(ct);
+
+            if(assignee != null)
+            {
+                nextStep.AssignedToUserId = assignee.Id;
+                if(roleName == RoleType.Approver) claim.AssignedApproverId = assignee.Id;
+            }
+
+            claim.Status = ClaimStatus.PendingApproval;
+        }
+        else
+        {
+            claim.Status = ClaimStatus.Approved;
+            claim.ApprovedAmount = claim.AdjustedAmount;
+        }
+
+        claim.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+
+        if(claim.Status == ClaimStatus.Approved)
+        {
+            await FinalizeApprovalAsync(claim, ct);
+        }
+        return claim.ToDto();
+    }
+
+    public async Task<ClaimDto> ApproveAsync(int claimId, int approverId, ApprovalDecisionRequest request, CancellationToken ct = default)
+    {
+        var claim = await ClaimsWithIncludes().FirstOrDefaultAsync(c => c.Id == claimId, ct)
+            ?? throw new NotFoundException("Claim", claimId);
+
+        EnsureAssignedApprover(claim, approverId);
+
+        if(claim.Status != ClaimStatus.PendingApproval)
+        {
+            throw new InvalidWorkflowTransitionException("Claim is not pending approval");
+        }
+
+        var currentStep = await _workflowService.GetCurrentStepAsync(claimId, ct) 
+            ?? throw new NotFoundException("Current workflow step for claim", claimId);
+        
+        var oldStatus = claim.Status;
+        var completedStep = await _workflowService.CompleteStepAsync(currentStep.Id, approverId, request.Comments,ct);
+        var nextStep = await _workflowService.GetCurrentStepAsync(claimId, ct);
+
+        if(nextStep != null)
+        {
+            var assignee = await _db.Users.Include(u => u.Role)
+                .Where(u => u.Role.Name == RoleType.Approver && u.IsActive && u.Id != approverId)
+                .OrderBy(u => _db.ClaimWorkflowSteps.Count(s => s.AssignedToUserId == u.Id && s.Status == WorkflowStepStatus.Current))
+                .FirstOrDefaultAsync(ct);
+
+            if(assignee != null)
+            {
+                nextStep.AssignedToUserId = assignee.Id;
+                claim.AssignedApproverId = assignee.Id;
+
+                await _db.SaveChangesAsync(ct);
+            }
+        }
+        else
+        {
+            claim.Status = ClaimStatus.Approved;
+            claim.ApprovedAmount = claim.AdjustedAmount;
+        }
+
+        claim.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        if(claim.Status == ClaimStatus.Approved)
+        {
+            await FinalizeApprovalAsync(claim, ct);
+        }
+    }
+
+    public async Task<ClaimDto> RejectAsync(int claimId, int approverId, ApprovalDecisionRequest request, CancellationToken ct = default)
+    {
+        var claim = await ClaimsWithIncludes().FirstOrDefaultAsync(c => c.Id == claimId, ct)
+            ?? throw new NotFoundException("Claim", claimId);
+
+        EnsureAssignedApprover(claim, approverId);
+
+        if (claim.Status != ClaimStatus.PendingApproval)
+            throw new InvalidWorkflowTransitionException("Claim is not pending approval.");
+
+        var oldStatus = claim.Status;
+        claim.Status = ClaimStatus.Rejected;
+        claim.UpdatedAt = DateTime.UtcNow;
+
+        await _workflowService.RejectWorkflowAsync(claimId,ct);
+        await _db.SaveChangesAsync();
+
+        return claim.ToDto();
+    }
+
+    private async Task FinalizeApprovalAsync(ClaimEntity claim, CancellationToken ct)
+    {
+        claim.Status = ClaimStatus.PaymentPending;
+        await _db.SaveChangesAsync(ct);
     }
 }
