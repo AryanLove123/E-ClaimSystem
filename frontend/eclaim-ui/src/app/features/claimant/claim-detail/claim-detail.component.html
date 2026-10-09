@@ -1,0 +1,140 @@
+@if(!loading() && claim(); as claim){
+<div class="page">
+    <h1>{{claim.claimNumber}} <app-status-badge [status]="claim.status"></app-status-badge></h1>
+    <p class="subtitle">{{claim.claimType}} claim · Severity: {{claim.severity}} · Filed {{ claim.createdAt |
+        date:'medium' }}</p>
+
+    @if(actionMessage()){
+    <p class="success">{{actionMessage()}}</p>
+    }
+    @else if(actionError()){
+    <p class="error">{{actionError()}}</p>
+    }
+
+    <div class="claim-card">
+        <h3 style="margin-top: 0;">Details</h3>
+        <p><strong>Claimant:</strong>{{claim.claimantName}}</p>
+        <p><strong>Policy #:</strong> {{ claim.policyNumber }}</p>
+        <p><strong>Incident date:</strong> {{ claim.incidentDate | date }}</p>
+        <p><strong>Location:</strong> {{ claim.location }}</p>
+        <p><strong>Description:</strong> {{ claim.description }}</p>
+        <p><strong>Requested amount:</strong> {{ claim.requestedAmount | currency:'INR' }}</p>
+        @if(claim.adjustedAmount){
+        <p><strong>Adjusted Amount:</strong>{{claim.adjustedAmount}}</p>
+        }
+        @if(claim.approvedAmount){
+        <p><strong>Approved Amount:</strong>{{claim.approvedAmount}}</p>
+        }
+        @if(claim.assignedAdjusterName){
+        <p><strong>Adjusted Amount:</strong>{{claim.assignedAdjusterName}}</p>
+        }
+        @if(claim.assignedApproverName){
+        <p><strong>Adjusted Amount:</strong>{{claim.assignedApproverName}}</p>
+        }
+    </div>
+
+
+    <!-- Claimant Action -->
+    @if (isOwner()) {
+    <div class="claim-card">
+        <h3 style="margin-top: 0;">Actions</h3>
+        @if (claim.status == 'Draft') {
+        <button class="btn btn-primary" style="display: inline-block; width: auto;" (click)="submitClaim()">Submit
+            Claim</button>
+        }
+        @if(claim.status == "AdditionalDocumentsRequired"){
+        <p>The adjuster has requested additional documents. Upload them below, then resubmit.</p>
+        <button class="btn btn-success" (click)="resubmitAfterDocuments()">Resume Review</button>
+        }
+
+        <div class="form-group" style="margin-top: 1rem;">
+            <label>Upload supporting document (PDF/JPG/PNG, max 10MB)</label>
+            <input type="file" class="form-control" accept=".pdf, .jpg, .jpeg, .png" (change)="onFileSelected($event)">
+            <button class="btn btn-secondary" style="margin-top: 0.5rem;" [disabled]="!selectedFile()"
+                (click)="uploadDocument()">Upload</button>
+        </div>
+    </div>
+    }
+
+    <!-- Adjuster Actions -->
+    @if (isAdjuster() && (claim.status == "UnderReview" || claim.status == "UnderAdjustment")) {
+    <h3 style="margin-top: 0;">Adjuster Actions</h3>
+
+    <div class="form-group">
+        <label>Adjusted Amount</label>
+        <input type="number" class="form-control" [value]="adjustAmount()"
+            (input)="adjustAmount.set(+$any($event.target).value)" />
+    </div>
+    <div class="form-group">
+        <label>Comments</label>
+        <textarea rows="2" class="form-control" [value]="comments()"
+            (input)="comments.set($any($event.target).value)"></textarea>
+    </div>
+
+    <button class="btn btn-secondary" (click)="adjustClaim()">Adjust Amount</button>
+    <button class="btn btn-primary" (click)="completeReview()">Complete Review (send to next step)</button>
+    <button class="btn btn-danger" (click)="requestDocuments()">Request Additional Documents</button>
+    }
+
+    <!-- Approver Actions -->
+    @if(isApprover() && claim.status == "PendingApproval"){
+    <div class="claim-card">
+        <h3 style="margin-top: 0;">Approver Actions</h3>
+        <div class="form-group">
+            <label>Comments</label>
+            <textarea rows="2" [value]="comments()" (input)="comments.set($any($event.target).value)"></textarea>
+        </div>
+        <button class="btn btn-success" style="display: inline-block; width: auto;" (click)="approve()">Approve</button>
+        <button class="btn btn-danger" style="display: inline-block; width: auto;" (click)="reject()">Reject</button>
+    </div>
+    }
+
+    <!-- Documents -->
+    <div class="claim-card">
+        <h3 style="margin-top: 0;">Documents</h3>
+        @if(claim.documents.length == 0){
+        <p class="empty-state">No documents uploaded yet.</p>
+        }@else{
+        <ul>
+            @for(doc of claim.documents; track doc.id){
+            <li>{{doc.originalFileName}} ({{(doc.fileSizeBytes / 1024) | number: '1.0-0'}} KB) — {{ doc.createdAt |
+                date:'short' }}</li>
+            }
+        </ul>
+        }
+    </div>
+
+    <!-- Workflow Status -->
+    @if(workflowStatus(); as Wfstatus){
+    <div class="claim-card">
+        <h3 style="margin-top:0;">Workflow: {{ Wfstatus.workflowName }} ({{ Wfstatus.status }})</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Step</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Assigned to</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for(s of Wfstatus.steps; track s.stepOrder){
+                <tr>
+                    <td>{{ s.stepOrder }}. {{ s.name }}</td>
+                    <td>{{ s.responsibleRole }}</td>
+                    <td>
+                        <app-status-badge [status]="s.status"></app-status-badge>
+                    </td>
+                    <td>{{ s.assignedToName ?? '—' }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+</div>
+}@else {
+    <div class="page">
+        <p>Loading...</p>
+    </div>
+}

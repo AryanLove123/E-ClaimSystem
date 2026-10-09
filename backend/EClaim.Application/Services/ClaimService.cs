@@ -291,7 +291,7 @@ public class ClaimService : IClaimService
         return claim.ToDto();
     }
 
-    public async Task<ClaimDto> ResubmitAfterDocumentAsync(int claimId, int claimantId, CancellationToken ct = default)
+    public async Task<ClaimDto> ResubmitAfterDocumentsAsync(int claimId, int claimantId, CancellationToken ct = default)
     {
         var claim = await ClaimsWithIncludes().FirstOrDefaultAsync(c => c.Id == claimId, ct)
             ?? throw new NotFoundException("Claim", claimId);
@@ -415,6 +415,8 @@ public class ClaimService : IClaimService
         {
             await FinalizeApprovalAsync(claim, ct);
         }
+
+        return claim.ToDto();
     }
 
     public async Task<ClaimDto> RejectAsync(int claimId, int approverId, ApprovalDecisionRequest request, CancellationToken ct = default)

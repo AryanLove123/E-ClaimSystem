@@ -14,7 +14,7 @@ public interface IClaimService
     Task<ClaimDto> AdjustClaimAsync(int claimId, int adjusterId, AdjustClaimRequest request, CancellationToken ct = default);
     Task<ClaimDto> RequestAdditionalDocumentsAsync(int claimId, int adjusterId, DocumentsRequest request, CancellationToken ct = default);
     Task<ClaimDto> CompleteAdjusterReviewAsync(int claimId, int adjusterId, ApprovalDecisionRequest request, CancellationToken ct = default);
-    Task<ClaimDto> ResubmitAfterDocumentAsync(int claimId, int claimantId, CancellationToken ct = default);
+    Task<ClaimDto> ResubmitAfterDocumentsAsync(int claimId, int claimantId, CancellationToken ct = default);
     Task<ClaimDto> ApproveAsync(int claimId, int approverId, ApprovalDecisionRequest request, CancellationToken ct = default);
     Task<ClaimDto> RejectAsync(int claimId, int approverId, ApprovalDecisionRequest request, CancellationToken ct = default);
 }

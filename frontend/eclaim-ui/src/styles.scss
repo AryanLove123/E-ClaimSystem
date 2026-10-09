@@ -46,6 +46,10 @@
   --color-info-bg: #eff6ff;
   --color-info-border: #bfdbfe;
 
+  --color-neutral: #475569;
+  --color-neutral-bg: #f1f5f9;
+  --color-neutral-border: #cbd5e1;
+
 
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -95,47 +99,34 @@ body {
 
 .container {
   min-height: 100vh;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   padding: 2rem 1rem;
-
   background: var(--color-bg-page);
 }
 
 .card {
   width: 100%;
   max-width: 440px;
-
   padding: 2.5rem;
-
   background: var(--color-bg-surface);
-
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-
   box-shadow: var(--shadow-lg);
 
   h1 {
     margin: 0;
-
     text-align: center;
-
     font-size: 1.75rem;
     font-weight: 700;
-
     color: var(--color-text-primary);
   }
 
   .subtitle {
     margin: 0.5rem 0 2rem;
-
     text-align: center;
-
     color: var(--color-text-muted);
-
     font-size: 0.95rem;
   }
 }
@@ -146,12 +137,9 @@ body {
 
   label {
     display: block;
-
     margin-bottom: 0.5rem;
-
     font-size: 0.9rem;
     font-weight: 600;
-
     color: var(--color-text-secondary);
 
     span {
@@ -165,19 +153,13 @@ body {
 .form-control {
   width: 100%;
   box-sizing: border-box;
-
   padding: 0.75rem 0.875rem;
-
   border: 1px solid var(--color-border-input);
   border-radius: var(--radius-sm);
-
   background: var(--color-bg-surface);
   color: var(--color-text-primary);
-
   font-size: 0.95rem;
-
   outline: none;
-
   transition:
     border-color var(--transition-normal),
     box-shadow var(--transition-normal);
@@ -200,17 +182,12 @@ body {
 
 .btn {
   width: 100%;
-
   padding: 0.75rem 1rem;
-
   border: none;
   border-radius: var(--radius-sm);
-
   font-size: 0.95rem;
   font-weight: 600;
-
   cursor: pointer;
-
   transition:
     background-color var(--transition-normal),
     transform var(--transition-fast),
@@ -245,39 +222,29 @@ body {
 .success,
 .loading {
   margin: 0 0 1rem;
-
   padding: 0.7rem 0.8rem;
-
   border-radius: var(--radius-sm);
-
   font-size: 0.85rem;
 }
 
 
 .error {
   color: var(--color-error);
-
   background: var(--color-error-bg);
-
   border: 1px solid var(--color-error-border);
 }
 
 
 .success {
   color: var(--color-success);
-
   background: var(--color-success-bg);
-
   border: 1px solid var(--color-success-border);
 }
 
 
 .loading {
   color: var(--color-info);
-
   background: var(--color-info-bg);
-
   border: 1px solid var(--color-info-border);
-
   text-align: center;
 }

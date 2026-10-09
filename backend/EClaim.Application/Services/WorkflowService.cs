@@ -1,4 +1,5 @@
-﻿using EClaim.Application.Interfaces;
+﻿using EClaim.Application.DTOs.Workflow;
+using EClaim.Application.Interfaces;
 using EClaim.Domain.Entities;
 using EClaim.Domain.Enums;
 using EClaim.Domain.Exceptions;
@@ -161,5 +162,30 @@ public class WorkflowService : IWorkflowService
         var currentStep = claimWorkflow.Steps.FirstOrDefault(s => s.Status == WorkflowStepStatus.Current);
         currentStep?.Status = WorkflowStepStatus.Skipped;
         await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task<ClaimWorkflowStatusDto> GetWorkflowStatusAsync(int claimId, CancellationToken ct = default)
+    {
+        var claimWorkflow = await _db.ClaimWorkflows
+            .Include(cw => cw.Workflow)
+            .Include(cw => cw.Steps).ThenInclude(s => s.WorkflowStep)
+            .Include(cw => cw.Steps).ThenInclude(s => s.AssignedToUser)
+            .FirstOrDefaultAsync(cw => cw.ClaimId == claimId, ct)
+            ?? throw new NotFoundException("ClaimWorkflow for claim", claimId);
+
+        return new ClaimWorkflowStatusDto
+        {
+            WorkflowName = claimWorkflow.Workflow.Name,
+            Status = claimWorkflow.Status.ToString(),
+            Steps = claimWorkflow.Steps.OrderBy(s => s.StepOrder).Select(s => new ClaimWorkflowStepStatusDto
+            {
+                StepOrder = s.StepOrder,
+                Name = s.WorkflowStep.Name,
+                ResponsibleRole = s.WorkflowStep.ResponsibleRole.ToString(),
+                Status = s.Status.ToString(),
+                AssignedToName = s.AssignedToUser?.FullName,
+                CompletedAt = s.CompletedAt
+            }).ToList()
+        };
     }
 }

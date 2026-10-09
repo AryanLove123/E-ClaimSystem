@@ -1,4 +1,5 @@
-﻿using EClaim.Domain.Entities;
+﻿using EClaim.Application.DTOs.Workflow;
+using EClaim.Domain.Entities;
 using EClaim.Domain.Enums;
 
 namespace EClaim.Application.Interfaces;
@@ -12,4 +13,5 @@ public interface IWorkflowService
     Task PauseWorkflowAsync(int claimId, string reason, CancellationToken ct = default);
     Task ResumeWorkflowAsync(int claimId, CancellationToken ct = default);
     Task RejectWorkflowAsync(int claimId, CancellationToken ct = default);
+    Task<ClaimWorkflowStatusDto> GetWorkflowStatusAsync(int claimId, CancellationToken ct = default);
 }
