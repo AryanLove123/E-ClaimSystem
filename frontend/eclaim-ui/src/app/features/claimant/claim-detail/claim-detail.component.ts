@@ -49,7 +49,9 @@ export class ClaimDetailComponent implements OnInit {
         this.loading.set(false);
         this.claim.set(res.data);
         this.adjustAmount.set(res.data.requestedAmount);
-        this.loadWorkflowStatus();
+        if(this.claim()?.status !='Draft'){
+          this.loadWorkflowStatus();
+        }
       },
       error: (err) =>{
         this.loading.set(false);

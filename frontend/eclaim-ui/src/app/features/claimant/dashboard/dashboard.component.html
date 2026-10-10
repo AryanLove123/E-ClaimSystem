@@ -1,0 +1,58 @@
+<div class="page">
+    <h1>Welcome, {{ authService.currentUser()?.fullName }}</h1>
+    <p class="subtitle">Here's an overview of your recent claims.</p>
+
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="value">{{ claims()?.length }}</div>
+            <div class="label">Recent claims</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ activeCount }}</div>
+            <div class="label">In progress</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ approvedCount }}</div>
+            <div class="label">Approved / Paid</div>
+        </div>
+    </div>
+
+    <div class="claim-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <h3 style="margin:0;">Recent claims</h3>
+            <a class="btn btn-primary" style="display: inline-block; width: auto; text-decoration: none;" routerLink="/claimant/create-claim">+ New Claim</a>
+        </div>
+
+        @if(loading()){
+        <p>Loading...</p>
+        }
+        @else if (!loading() && claims()?.length == 0) {
+        <p class="empty-state">You haven't submitted any claims yet.</p>
+        }@else {
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Claim #</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for(c of claims(); track c.id){
+                    <tr>
+                        <td>{{ c.claimNumber }}</td>
+                        <td>{{ c.claimType }}</td>
+                        <td>{{ c.requestedAmount | currency:'INR' }}</td>
+                        <td><app-status-badge [status]="c.status"></app-status-badge></td>
+                        <td><a [routerLink]="['/claimant/claims', c.id]">View</a></td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        }
+    </div>
+</div>

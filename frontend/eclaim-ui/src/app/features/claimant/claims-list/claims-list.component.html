@@ -1,0 +1,65 @@
+<div class="page">
+    <h1>My Claims</h1>
+    <p class="subtitle">Track and manage all the claims you've submitted.</p>
+
+    <div class="filters">
+        <select [ngModel]="statusFilter()" (ngModelChange)="onStatusChange($event)">
+            <option value="">All Statuses</option>
+
+            @for(s of statuses; track s){
+            <option [value]="s">{{s}}</option>
+            }
+        </select>
+
+        <select [ngModel]="typeFilter()" (ngModelChange)="onTypeChange($event)">
+            <option value="">All types</option>
+
+            @for (t of types; track t) {
+            <option [value]="t">{{ t }}</option>
+            }
+        </select>
+        <a class="btn btn-primary" style="text-decoration: none; display: inline-block; width: auto;"
+            routerLink="/claimant/create-claim">+ New Claim</a>
+    </div>
+
+    <div class="claim-card">
+        @if(loading()){
+        <p>Loading...</p>
+        }
+        @else if(claims()?.length == 0){
+        <p class="empty-state">No claims match your filters</p>
+        }@else{
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Claim #</th>
+                        <th>Policy #</th>
+                        <th>Type</th>
+                        <th>Severity</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for(c of claims(); track c.id){
+                    <tr>
+                        <td class="font-medium text-dark">{{ c.claimNumber }}</td>
+                        <td>{{ c.policyNumber }}</td>
+                        <td>{{ c.claimType }}</td>
+                        <td><span class="badge-severity">{{ c.severity }}</span></td>
+                        <td class="font-medium">{{ c.requestedAmount | currency:'INR' }}</td>
+                        <td><app-status-badge [status]="c.status"></app-status-badge></td>
+                        <td class="text-right">
+                            <a class="btn-link" [routerLink]="['/claimant/claims', c.id]">View Details &rarr;</a>
+                        </td>
+
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        }
+    </div>
+</div>
