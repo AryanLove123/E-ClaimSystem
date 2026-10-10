@@ -23,5 +23,19 @@ export const routes: Routes = [
       {path: 'create-claim', loadComponent: () => import('./features/claimant/create-claim/create-claim.component').then((m) => m.CreateClaimComponent)},
       {path: 'claims/:id', loadComponent: () => import('./features/claimant/claim-detail/claim-detail.component').then((m) => m.ClaimDetailComponent)},
     ]
+  },
+  {
+    path: 'adjuster',
+    children: [
+      {path: 'dashboard', loadComponent: () => import('./features/adjuster/dashboard/dashboard.component').then((m) => m.DashboardComponent)},
+      {path: 'claims/:id', loadComponent: () => import('./features/claimant/claim-detail/claim-detail.component').then((m) => m.ClaimDetailComponent)}
+    ]
+  },
+  {
+    path: 'approver',
+    children: [
+      {path: 'dashboard', loadComponent: () => import('./features/approver/dashboard/dashboard.component').then((m) => m.DashboardComponent)},
+      {path: 'claims/:id',loadComponent: () => import('./features/claimant/claim-detail/claim-detail.component').then((m) => m.ClaimDetailComponent)}
+    ]
   }
 ];

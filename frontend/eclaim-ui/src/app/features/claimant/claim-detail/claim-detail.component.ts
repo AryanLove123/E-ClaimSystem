@@ -1,7 +1,7 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ClaimService } from '../../../core/services/claim.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Claim } from '../../../core/models/claim.model';
 import { CommonModule } from '@angular/common';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
@@ -11,7 +11,7 @@ import { WorkflowService } from '../../../core/services/workflow.service';
 
 @Component({
   selector: 'app-claim-detail',
-  imports: [CommonModule, StatusBadgeComponent, FormsModule],
+  imports: [CommonModule, StatusBadgeComponent, FormsModule,RouterLink],
   templateUrl: './claim-detail.component.html',
   styleUrl: '../page.scss',
 })
@@ -28,6 +28,7 @@ export class ClaimDetailComponent implements OnInit {
   loading = signal<boolean>(true);
   actionMessage = signal<string>('');
   actionError = signal<string>('');
+  loadError = signal<string>('');
 
   adjustAmount = signal<number>(0);
   comments = signal<string>('');
@@ -44,6 +45,7 @@ export class ClaimDetailComponent implements OnInit {
 
   reload() : void{
     this.loading.set(true);
+    this.loadError.set('');
     this.claimService.getById(this.claimId()).subscribe({
       next: (res) =>{
         this.loading.set(false);
@@ -55,6 +57,8 @@ export class ClaimDetailComponent implements OnInit {
       },
       error: (err) =>{
         this.loading.set(false);
+        let msg = err?.error?.message ?? 'You do not have access to this claim or it could not be found.';
+        this.loadError.set(msg);
       }
     })
   }

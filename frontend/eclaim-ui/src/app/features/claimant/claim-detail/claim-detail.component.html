@@ -1,4 +1,20 @@
-@if(!loading() && claim(); as claim){
+@if (loading()) {
+    <div class="page">
+        <div class="claim-card text-center" style="padding: 3rem;">
+            <p>Loading claim details...</p>
+        </div>
+    </div>
+}
+@else if (loadError()) {
+    <div class="page">
+        <div class="claim-card claim-card-error">
+            <h3 style="margin-top: 0;">Unable to Load Claim</h3>
+            <p style="margin-bottom: 1rem;">{{ loadError() }}</p>
+            <a class="btn btn-secondary" style="text-decoration: none;" routerLink="/approver/dashboard">&larr; Back to dashboard</a>
+        </div>
+    </div>
+}
+@else if (claim(); as claim){
 <div class="page">
     <h1>{{claim.claimNumber}} <app-status-badge [status]="claim.status"></app-status-badge></h1>
     <p class="subtitle">{{claim.claimType}} claim · Severity: {{claim.severity}} · Filed {{ claim.createdAt |
@@ -133,8 +149,4 @@
     </div>
     }
 </div>
-}@else {
-    <div class="page">
-        <p>Loading...</p>
-    </div>
 }

@@ -155,8 +155,12 @@ public class ClaimService : IClaimService
             case "Approver":
                 query = query.Where(c => c.AssignedApproverId == currentUser.UserId);
                 break;
+            
+            case "Admin": 
+                break;
 
             default:
+                query = query.Where(_ => false);
                 break;
         }
 

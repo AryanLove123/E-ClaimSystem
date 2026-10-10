@@ -107,3 +107,18 @@ tbody tr:hover {
   color: #64748b;
   margin-top: 0.25rem;
 }
+
+.claim-card-error {
+  background-color: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  border-left: 4px solid var(--color-error);
+
+  h3 {
+    color: var(--color-error);
+    border-bottom: 1px solid var(--color-error-border);
+  }
+
+  p {
+    color: var(--color-error);
+  }
+}

@@ -1,0 +1,51 @@
+<div class="page">
+    <h1>Approver Dashboard</h1>
+    <p class="subtitle">Claims requiring your approval.</p>
+
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="value">{{ claims()?.length }}</div>
+            <div class="label">Assigned claims</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">{{ pendingCount }}</div>
+            <div class="label">Awaiting your action</div>
+        </div>
+    </div>
+
+    <div class="claim-card">
+        @if(loading()){
+        <p>Loading...</p>
+        }
+        @else if (!loading() && claims()?.length == 0) {
+        <p class="empty-state">No claims to approve right now.</p>
+        }@else {
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Claim #</th>
+                        <th>Claimant</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for(c of claims(); track c.id){
+                    <tr>
+                        <td>{{ c.claimNumber }}</td>
+                        <td>{{ c.claimantName }}</td>
+                        <td>{{ c.claimType }}</td>
+                        <td>{{ c.adjustedAmount ?? c.requestedAmount | currency:'INR' }}</td>
+                        <td><app-status-badge [status]="c.status"></app-status-badge></td>
+                        <td><a [routerLink]="['/claimant/claims', c.id]">Review</a></td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        }
+    </div>
+</div>
