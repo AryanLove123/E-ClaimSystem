@@ -1,0 +1,90 @@
+<div class="page">
+    <h1>Reports</h1>
+    <p class="subtitle">Claims metrics across the whole system, with Excel/PDF export.</p>
+
+    <div style="margin-bottom:1rem; display: flex; justify-content: space-between; gap: 2rem;">
+        <button class="btn btn-secondary" (click)="download('excel')">Export Excel</button>
+        <button class="btn btn-secondary" (click)="download('pdf')">Export PDF</button>
+    </div>
+
+    @if(report(); as report){
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="value">
+                {{report.totalClaims}}
+            </div>
+            <div class="label">Total Claims</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">
+                {{report.totalRequestedAmount | currency: 'INR': 'symbol': '1.0-0'}}
+            </div>
+            <div class="label">Requested</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">
+                {{report.totalApprovedAmount | currency: 'INR': 'symbol': '1.0-0'}}
+            </div>
+            <div class="label">Approved</div>
+        </div>
+    </div>
+
+    <div class="report-grid">
+        <div class="claim-card">
+            <h3 style="margin-top: 0;">By Status</h3>
+            <table>
+                <tbody>
+                    @for(s of report.byStatus; track s){
+                    <tr>
+                        <td>{{s.status}}</td>
+                        <td>{{s.count}}</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="claim-card">
+            <h3 style="margin-top: 0;">By Types</h3>
+            <table>
+                <tbody>
+                    @for(t of report.byType; track t){
+                    <tr>
+                        <td>{{t.claimType}}</td>
+                        <td>{{t.count}}</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="claim-card">
+            <h3 style="margin-top: 0;">By Status</h3>
+            <table>
+                <tbody>
+                    @for(s of report.bySeverity; track s){
+                    <tr>
+                        <td>{{s.severity}}</td>
+                        <td>{{s.count}}</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="claim-card">
+            <h3 style="margin-top: 0;">By Month</h3>
+            <table>
+                <tbody>
+                    @for(m of report.byMonth; track m){
+                    <tr>
+                        <td>{{m.month}}</td>
+                        <td>{{m.count}}</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    }
+</div>

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { RegisterComponent } from '../app/features/auth/register/register.component';
+import { UsersComponent } from './features/admin/users/users.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -36,6 +37,14 @@ export const routes: Routes = [
     children: [
       {path: 'dashboard', loadComponent: () => import('./features/approver/dashboard/dashboard.component').then((m) => m.DashboardComponent)},
       {path: 'claims/:id',loadComponent: () => import('./features/claimant/claim-detail/claim-detail.component').then((m) => m.ClaimDetailComponent)}
+    ]
+  },
+  {
+    path: 'admin',
+    children: [
+      {path: 'dashboard', loadComponent: () => import('./features/admin/dashboard/dashboard.component').then((m)=> m.DashboardComponent)},
+      {path: 'users', loadComponent: () => import('./features/admin/users/users.component').then((m) => UsersComponent)},
+      {path: 'reports', loadComponent: () => import('./features/admin/reports/reports.component').then((m) => m.ReportsComponent)}
     ]
   }
 ];

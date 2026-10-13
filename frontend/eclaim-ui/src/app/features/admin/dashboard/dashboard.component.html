@@ -1,0 +1,58 @@
+<div class="page">
+    <h1>Admin Dashboard</h1>
+    <p class="subtitle">System-wide overview of the E-Claim system.</p>
+
+    <div class="claim-card">
+        <h3 style="margin-top: 0;">Quick links</h3>
+        <div class="quick-links-container">
+            <div class="link-row">
+                <a routerLink="/admin/users">Manage Users</a>
+                <a routerLink="/admin/workflows">Manage Workflows</a>
+                <a routerLink="/admin/reports">Full Reports &amp; Export</a>
+            </div>
+        </div>
+    </div>
+
+    @if(report(); as report){
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="value">
+                {{report.totalClaims}}
+            </div>
+            <div class="label">Total Claims</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">
+                {{report.totalRequestedAmount | currency: 'INR': 'symbol': '1.0-0'}}
+            </div>
+            <div class="label">Requested</div>
+        </div>
+        <div class="stat-card">
+            <div class="value">
+                {{report.totalApprovedAmount | currency: 'INR': 'symbol': '1.0-0'}}
+            </div>
+            <div class="label">Approved</div>
+        </div>
+    </div>
+
+    <div class="claim-card">
+        <h3 style="margin-top: 0;">Claim by status</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for(s of report.byStatus; track s){
+                <tr>
+                    <td>{{s.status}}</td>
+                    <td>{{s.count}}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+</div>

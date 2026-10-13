@@ -9,7 +9,7 @@ import { RouterLink } from '@angular/router';
   selector: 'app-dashboard',
   imports: [StatusBadgeComponent, CommonModule, RouterLink],
   templateUrl: './dashboard.component.html',
-  styles: ``,
+  styleUrl: '../../../shared/styles/page.scss',
 })
 export class DashboardComponent {
   claimService = inject(ClaimService);

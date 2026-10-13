@@ -13,7 +13,7 @@ import { WorkflowService } from '../../../core/services/workflow.service';
   selector: 'app-claim-detail',
   imports: [CommonModule, StatusBadgeComponent, FormsModule,RouterLink],
   templateUrl: './claim-detail.component.html',
-  styleUrl: '../page.scss',
+  styleUrl: '../../../shared/styles/page.scss',
 })
 export class ClaimDetailComponent implements OnInit {
   claimService = inject(ClaimService);

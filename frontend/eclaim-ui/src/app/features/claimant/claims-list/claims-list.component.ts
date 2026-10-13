@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
   selector: 'app-claims-list',
   imports: [FormsModule, RouterLink,StatusBadgeComponent, CommonModule],
   templateUrl: './claims-list.component.html',
-  styles: ``,
+  styleUrl: '../../../shared/styles/page.scss',
 })
 export class ClaimsListComponent implements OnInit {
   claimService = inject(ClaimService);

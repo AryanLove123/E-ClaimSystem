@@ -9,7 +9,7 @@ import { CommonModule } from '@angular/common';
   selector: 'app-create-claim',
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './create-claim.component.html',
-  styles: ``,
+  styleUrl: '../../../shared/styles/page.scss',
 })
 export class CreateClaimComponent {
   fb = inject(FormBuilder);

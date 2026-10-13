@@ -1,6 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
 @use './app/features/auth/auth';
-@use './app/features/claimant/page.scss';
+@use './app/shared/styles/page.scss';
 
 :root {
   --color-primary: #2563eb;

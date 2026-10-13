@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
   selector: 'app-dashboard',
   imports: [CommonModule, StatusBadgeComponent, RouterLink],
   templateUrl: './dashboard.component.html',
-  styles: ``,
+  styleUrl: '../../../shared/styles/page.scss',
 })
 export class DashboardComponent implements OnInit {
   claims = signal<Claim[] | undefined>(undefined);

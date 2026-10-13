@@ -122,3 +122,34 @@ tbody tr:hover {
     color: var(--color-error);
   }
 }
+
+.quick-links-container {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap; 
+}
+
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem; 
+  flex-wrap: wrap;
+}
+
+.link-row a {
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.link-row a:hover {
+  text-decoration: underline;
+}
+
+.report-grid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}

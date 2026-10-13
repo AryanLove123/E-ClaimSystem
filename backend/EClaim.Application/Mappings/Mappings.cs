@@ -1,4 +1,5 @@
 using EClaim.Application.DTOs.Claims;
+using EClaim.Application.DTOs.Users;
 using EClaim.Domain.Entities;
 
 namespace EClaim.Application.Mappings;
@@ -35,5 +36,16 @@ public static class Mappings
         ContentType = doc.ContentType,
         FileSizeBytes = doc.FileSizeBytes,
         CreatedAt = doc.CreatedAt
+    };
+
+    public static UserListDto ToAdminListDto(this User user) => new()
+    {
+        Id = user.Id,
+        FullName = user.FullName,
+        Email = user.Email,
+        Role = user.Role.Name.ToString(),
+        EmailVerified = user.EmailVerified,
+        IsActive = user.IsActive,
+        CreatedAt = user.CreatedAt
     };
 }
