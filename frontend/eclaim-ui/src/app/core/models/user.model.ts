@@ -17,3 +17,13 @@ export interface UserProfile {
   role: UserRole;
   emailVerified: boolean;
 }
+
+export interface UserListItem {
+  id: number;
+  fullName: string;
+  email: string;
+  role: UserRole;
+  emailVerified: boolean;
+  isActive: boolean;
+  createdAt: string;
+}

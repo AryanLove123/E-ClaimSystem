@@ -16,6 +16,14 @@ public class WorkflowController : BaseApiController
         _workflowService = workflowService;
     }
 
+    [HttpGet]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAll(CancellationToken ct)
+    {
+        var workflows = await _workflowService.GetAllWorkflowsAsync(ct);
+        return Ok(ApiResponse<List<WorkflowDto>>.Ok(workflows));
+    }
+
     [HttpGet("claims/{claimId:int}/status")]
     public async Task<IActionResult> GetClaimWorkflowStatus(int claimId, CancellationToken ct)
     {

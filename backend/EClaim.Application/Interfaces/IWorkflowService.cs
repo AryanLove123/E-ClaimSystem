@@ -14,4 +14,6 @@ public interface IWorkflowService
     Task ResumeWorkflowAsync(int claimId, CancellationToken ct = default);
     Task RejectWorkflowAsync(int claimId, CancellationToken ct = default);
     Task<ClaimWorkflowStatusDto> GetWorkflowStatusAsync(int claimId, CancellationToken ct = default);
+    Task<List<WorkflowDto>> GetAllWorkflowsAsync(CancellationToken ct = default);
+
 }

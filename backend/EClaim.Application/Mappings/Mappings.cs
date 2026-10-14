@@ -1,5 +1,6 @@
 using EClaim.Application.DTOs.Claims;
 using EClaim.Application.DTOs.Users;
+using EClaim.Application.DTOs.Workflow;
 using EClaim.Domain.Entities;
 
 namespace EClaim.Application.Mappings;
@@ -47,5 +48,28 @@ public static class Mappings
         EmailVerified = user.EmailVerified,
         IsActive = user.IsActive,
         CreatedAt = user.CreatedAt
+    };
+
+    public static WorkflowDto ToDto(this Workflow w) => new()
+    {
+        Id = w.Id,
+        Name = w.Name,
+        Description = w.Description,
+        ClaimType = w.ClaimType?.ToString(),
+        MinAmount = w.MinAmount,
+        MaxAmount = w.MaxAmount,
+        Severity = w.Severity?.ToString(),
+        Priority = w.Priority,
+        IsActive = w.IsActive,
+        Steps = w.Steps?.OrderBy(s => s.StepOrder).Select(s => s.ToDto()).ToList() ?? new List<WorkflowStepDto>()
+    };
+
+    public static WorkflowStepDto ToDto(this WorkflowStep s) => new()
+    {
+        Id = s.Id,
+        StepOrder = s.StepOrder,
+        Name = s.Name,
+        ResponsibleRole = s.ResponsibleRole.ToString(),
+        AllowReject = s.AllowReject
     };
 }

@@ -44,7 +44,8 @@ export const routes: Routes = [
     children: [
       {path: 'dashboard', loadComponent: () => import('./features/admin/dashboard/dashboard.component').then((m)=> m.DashboardComponent)},
       {path: 'users', loadComponent: () => import('./features/admin/users/users.component').then((m) => UsersComponent)},
-      {path: 'reports', loadComponent: () => import('./features/admin/reports/reports.component').then((m) => m.ReportsComponent)}
+      {path: 'reports', loadComponent: () => import('./features/admin/reports/reports.component').then((m) => m.ReportsComponent)},
+      {path: 'workflows', loadComponent: () => import('./features/admin/workflows/workflows.component').then((m) => m.WorkflowsComponent)},
     ]
   }
 ];

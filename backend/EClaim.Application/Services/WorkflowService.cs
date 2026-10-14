@@ -1,5 +1,6 @@
 ﻿using EClaim.Application.DTOs.Workflow;
 using EClaim.Application.Interfaces;
+using EClaim.Application.Mappings;
 using EClaim.Domain.Entities;
 using EClaim.Domain.Enums;
 using EClaim.Domain.Exceptions;
@@ -187,5 +188,11 @@ public class WorkflowService : IWorkflowService
                 CompletedAt = s.CompletedAt
             }).ToList()
         };
+    }
+
+    public async Task<List<WorkflowDto>> GetAllWorkflowsAsync(CancellationToken ct = default)
+    {
+        var workflows = await _db.Workflows.Include(w => w.Steps).OrderByDescending(w => w.Priority).ToListAsync(ct);
+        return workflows.Select(w => w.ToDto()).ToList();
     }
 }

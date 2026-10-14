@@ -1,0 +1,24 @@
+<div class="page">
+    <h1>Available Workflow</h1>
+
+    @if(!loading()){
+        @for(w of workflows(); track w.id){
+            <div class="claim-card">
+                <h3>{{w.name}}</h3>
+                <p>{{w.description}}</p>
+                <p style="font-size:0.85rem;">
+                    <strong>Matches:</strong>
+                    {{ w.claimType}},
+                    {{ w.severity}},
+                    amount {{ w.minAmount ?? 0 | currency:'INR':'symbol':'1.0-0' }} – {{ w.maxAmount ? (w.maxAmount |
+                    currency:'INR':'symbol':'1.0-0') : '∞' }}
+                </p>
+                <ol>
+                    @for (s of w.steps; track s.id) {
+                        <li>{{s.name}} — {{ s.responsibleRole }} </li>
+                    }
+                </ol>
+            </div>
+        }
+    }
+</div>

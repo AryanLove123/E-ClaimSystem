@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResponse } from '../models/api-response.model';
-import { ClaimWorkflowStatus } from '../models/workflow.model';
+import { ClaimWorkflowStatus, Workflow } from '../models/workflow.model';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -14,5 +14,9 @@ export class WorkflowService {
 
   getCLaimStatus(claimId: number): Observable<ApiResponse<ClaimWorkflowStatus>>{
     return this.http.get<ApiResponse<ClaimWorkflowStatus>>(`${this.baseUrl}/claims/${claimId}/status`);
+  }
+
+  getAll(): Observable<ApiResponse<Workflow[]>>{
+    return this.http.get<ApiResponse<Workflow[]>>(this.baseUrl);
   }
 }
