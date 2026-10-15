@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResponse } from '../models/api-response.model';
-import { UserListItem } from '../models/user.model';
+import { UserListItem, UserProfile } from '../models/user.model';
 import { environment } from '../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 
@@ -11,6 +11,14 @@ import { HttpClient } from '@angular/common/http';
 export class UserService {
   baseUrl = `${environment.apiUrl}/users`;
   constructor(private http: HttpClient){}
+
+  getProfile(): Observable<ApiResponse<UserProfile>> {
+    return this.http.get<ApiResponse<UserProfile>>(`${this.baseUrl}/profile`);
+  }
+
+  updateProfile(payload: { fullName: string; phoneNumber?: string }): Observable<ApiResponse<UserProfile>> {
+    return this.http.put<ApiResponse<UserProfile>>(`${this.baseUrl}/profile`, payload);
+  }
 
   getAll(): Observable<ApiResponse<UserListItem[]>>{
     return this.http.get<ApiResponse<UserListItem[]>>(this.baseUrl);

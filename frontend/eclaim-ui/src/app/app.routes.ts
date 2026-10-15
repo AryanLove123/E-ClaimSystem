@@ -23,6 +23,7 @@ export const routes: Routes = [
       {path: 'claims', loadComponent: () => import('./features/claimant/claims-list/claims-list.component').then((m) => m.ClaimsListComponent)},
       {path: 'create-claim', loadComponent: () => import('./features/claimant/create-claim/create-claim.component').then((m) => m.CreateClaimComponent)},
       {path: 'claims/:id', loadComponent: () => import('./features/claimant/claim-detail/claim-detail.component').then((m) => m.ClaimDetailComponent)},
+      {path: 'profile', loadComponent: () => import('./features/claimant/profile/profile.component').then((m)=> m.ProfileComponent)},
     ]
   },
   {

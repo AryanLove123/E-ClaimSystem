@@ -17,6 +17,20 @@ public class UsersController : BaseApiController
         _userService = userService;
     }
 
+    [HttpGet("profile")]
+    public async Task<IActionResult> GetProfile(CancellationToken ct)
+    {
+        var profile = await _userService.GetProfileAsync(CurrentUserId, ct);
+        return Ok(ApiResponse<UserProfileDto>.Ok(profile));
+    }
+
+    [HttpPut("profile")]
+    public async Task<IActionResult> UpdateProfile(UpdateProfileRequest request, CancellationToken ct)
+    {
+        var profile = await _userService.UpdateProfileAsync(CurrentUserId, request, ct);
+        return Ok(ApiResponse<UserProfileDto>.Ok(profile, "Profile updated."));
+    }
+
     [HttpGet]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAll(CancellationToken ct)

@@ -48,6 +48,15 @@ public static class Mappings
         Comments = h.Comments,
         CreatedAt = h.CreatedAt
     };
+    public static UserProfileDto ToProfileDto(this User user) => new()
+    {
+        Id = user.Id,
+        FullName = user.FullName,
+        Email = user.Email,
+        PhoneNumber = user.PhoneNumber,
+        Role = user.Role.Name.ToString(),
+        EmailVerified = user.EmailVerified
+    };
 
     public static UserListDto ToAdminListDto(this User user) => new()
     {
