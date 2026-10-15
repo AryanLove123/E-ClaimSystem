@@ -2,7 +2,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ClaimService } from '../../../core/services/claim.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Claim } from '../../../core/models/claim.model';
+import { Claim, ClaimHistoryItem } from '../../../core/models/claim.model';
 import { CommonModule } from '@angular/common';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { FormsModule } from '@angular/forms';
@@ -24,6 +24,7 @@ export class ClaimDetailComponent implements OnInit {
 
   claim = signal<Claim | undefined>(undefined);
   workflowStatus = signal<ClaimWorkflowStatus | undefined>(undefined);
+  history = signal<ClaimHistoryItem[]>([]);
 
   loading = signal<boolean>(true);
   actionMessage = signal<string>('');
@@ -51,6 +52,7 @@ export class ClaimDetailComponent implements OnInit {
         this.loading.set(false);
         this.claim.set(res.data);
         this.adjustAmount.set(res.data.requestedAmount);
+        this.loadHistory();
         if(this.claim()?.status !='Draft'){
           this.loadWorkflowStatus();
         }
@@ -70,6 +72,14 @@ export class ClaimDetailComponent implements OnInit {
       },
       error: (err) =>{
         this.workflowStatus.set(undefined);
+      }
+    })
+  }
+
+  loadHistory(): void{
+    this.claimService.getHistory(this.claimId()).subscribe({
+      next: (res) =>{
+        this.history.set(res.data);
       }
     })
   }

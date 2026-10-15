@@ -11,6 +11,7 @@ public interface IClaimService
     Task<PagedResult<ClaimDto>> SearchClaimsAsync(ClaimFilterRequest request, CurrentUser currentUser, CancellationToken ct = default);
     Task<ClaimDocumentDto> UploadDocumentAsync(int claimId, int userId, Stream fileStream, string filename, string contentType, long fileSize, CancellationToken ct = default);
     Task<ClaimDto> StartReviewAsync(int claimId, int adjusterId, CancellationToken ct = default);
+    Task<List<ClaimHistoryDto>> GetClaimHistoryAsync(int claimId, CurrentUser currentUser, CancellationToken ct = default);
     Task<ClaimDto> AdjustClaimAsync(int claimId, int adjusterId, AdjustClaimRequest request, CancellationToken ct = default);
     Task<ClaimDto> RequestAdditionalDocumentsAsync(int claimId, int adjusterId, DocumentsRequest request, CancellationToken ct = default);
     Task<ClaimDto> CompleteAdjusterReviewAsync(int claimId, int adjusterId, ApprovalDecisionRequest request, CancellationToken ct = default);

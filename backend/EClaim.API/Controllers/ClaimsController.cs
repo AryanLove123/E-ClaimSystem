@@ -46,6 +46,13 @@ public class ClaimsController : BaseApiController
         return Ok(ApiResponse<PagedResult<ClaimDto>>.Ok(claims, "Claims retrieved successfully."));
     }
 
+    [HttpGet("{id:int}/history")]
+    public async Task<IActionResult> GetHistory(int id, CancellationToken ct)
+    {
+        var history = await _claimService.GetClaimHistoryAsync(id, CurrentUser, ct);
+        return Ok(ApiResponse<List<ClaimHistoryDto>>.Ok(history));
+    }
+
     [HttpPost("{id:int}/documents")]
     [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<IActionResult> UploadDocument(int id, IFormFile file, CancellationToken ct)

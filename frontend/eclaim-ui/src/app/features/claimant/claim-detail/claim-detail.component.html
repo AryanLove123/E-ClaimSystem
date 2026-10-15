@@ -1,18 +1,19 @@
 @if (loading()) {
-    <div class="page">
-        <div class="claim-card text-center" style="padding: 3rem;">
-            <p>Loading claim details...</p>
-        </div>
+<div class="page">
+    <div class="claim-card text-center" style="padding: 3rem;">
+        <p>Loading claim details...</p>
     </div>
+</div>
 }
 @else if (loadError()) {
-    <div class="page">
-        <div class="claim-card claim-card-error">
-            <h3 style="margin-top: 0;">Unable to Load Claim</h3>
-            <p style="margin-bottom: 1rem;">{{ loadError() }}</p>
-            <a class="btn btn-secondary" style="text-decoration: none;" routerLink="/approver/dashboard">&larr; Back to dashboard</a>
-        </div>
+<div class="page">
+    <div class="claim-card claim-card-error">
+        <h3 style="margin-top: 0;">Unable to Load Claim</h3>
+        <p style="margin-bottom: 1rem;">{{ loadError() }}</p>
+        <a class="btn btn-secondary" style="text-decoration: none;" routerLink="/approver/dashboard">&larr; Back to
+            dashboard</a>
     </div>
+</div>
 }
 @else if (claim(); as claim){
 <div class="page">
@@ -146,6 +147,36 @@
                 }
             </tbody>
         </table>
+    </div>
+    }
+
+    @if(history()){
+    <div class="claim-card">
+        <h3 style="margin-top: 0;">History</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>When</th>
+                        <th>Action</th>
+                        <th>Status change</th>
+                        <th>By</th>
+                        <th>Comments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for(h of history(); track h){
+                        <tr>
+                            <td>{{ h.createdAt | date:'short' }}</td>
+                            <td>{{ h.action }}</td>
+                            <td>{{ h.oldStatus }} <span *ngIf="h.newStatus"> → {{ h.newStatus }}</span></td>
+                            <td>{{ h.performedByName ?? 'System' }}</td>
+                            <td>{{ h.comments }}</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
     }
 </div>

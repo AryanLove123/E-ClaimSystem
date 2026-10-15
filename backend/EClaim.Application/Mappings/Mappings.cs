@@ -39,6 +39,16 @@ public static class Mappings
         CreatedAt = doc.CreatedAt
     };
 
+    public static ClaimHistoryDto ToDto(this ClaimHistory h) => new()
+    {
+        Action = h.Action,
+        OldStatus = h.OldStatus?.ToString(),
+        NewStatus = h.NewStatus?.ToString(),
+        PerformedByName = h.PerformedBy?.FullName,
+        Comments = h.Comments,
+        CreatedAt = h.CreatedAt
+    };
+
     public static UserListDto ToAdminListDto(this User user) => new()
     {
         Id = user.Id,

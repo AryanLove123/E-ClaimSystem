@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { ApiResponse, PagedResult } from '../models/api-response.model';
-import { Claim, ClaimDocument, ClaimFilter } from '../models/claim.model';
+import { Claim, ClaimDocument, ClaimFilter, ClaimHistoryItem } from '../models/claim.model';
 import { Observable } from 'rxjs';
 
 const baseUrl = `${environment.apiUrl}/claims`;
@@ -28,6 +28,10 @@ export class ClaimService {
       }
     });
     return this.http.get<ApiResponse<PagedResult<Claim>>>(baseUrl, {params});
+  }
+
+  getHistory(id: number): Observable<ApiResponse<ClaimHistoryItem[]>>{
+    return this.http.get<ApiResponse<ClaimHistoryItem[]>>(`${baseUrl}/${id}/history`);
   }
 
   uploadDocument(id: number, file: File):Observable<ApiResponse<ClaimDocument>>{

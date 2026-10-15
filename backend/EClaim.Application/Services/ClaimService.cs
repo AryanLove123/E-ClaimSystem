@@ -42,7 +42,7 @@ public class ClaimService : IClaimService
 
     private static void EnsureAssignedAdjuster(ClaimEntity claim, int adjusterId)
     {
-        if(claim.AssignedAdjusterId != adjusterId)
+        if (claim.AssignedAdjusterId != adjusterId)
         {
             throw new ForbiddenAccessException("You are not the assigned adjuster for this claim");
         }
@@ -50,7 +50,7 @@ public class ClaimService : IClaimService
 
     private static void EnsureAssignedApprover(ClaimEntity claim, int approverId)
     {
-        if(claim.AssignedApproverId != approverId)
+        if (claim.AssignedApproverId != approverId)
         {
             throw new ForbiddenAccessException("You are not the assigned approver for this claim");
         }
@@ -93,6 +93,8 @@ public class ClaimService : IClaimService
         claim.ClaimNumber = ClaimNumberGenerator.Generate(claim.Id);
         await _db.SaveChangesAsync(ct);
 
+        await AddHistoryAsync(claim.Id, "ClaimCreated", null, ClaimStatus.Draft, claimantId, null, ct);
+
         var reloaded = await ClaimsWithIncludes().FirstAsync(c => c.Id == claim.Id, ct);
         return reloaded.ToDto();
     }
@@ -100,7 +102,7 @@ public class ClaimService : IClaimService
     public async Task<ClaimDto> SubmitClaimAsync(int claimId, int claimantId, CancellationToken ct = default)
     {
         var claim = _db.Claims.FirstOrDefault(c => c.Id == claimId) ?? throw new NotFoundException("Claim", claimId);
-        if(claim.ClaimantId != claimantId)
+        if (claim.ClaimantId != claimantId)
         {
             throw new ForbiddenAccessException("You do not have permission to submit this claim.");
         }
@@ -110,6 +112,7 @@ public class ClaimService : IClaimService
             throw new InvalidWorkflowTransitionException($"Claim {claim.ClaimNumber} is not in Draft status and cannot be submitted.");
         }
 
+        var oldStatus = claim.Status;
         claim.Status = ClaimStatus.UnderReview;
         claim.UpdatedAt = DateTime.UtcNow;
 
@@ -122,16 +125,18 @@ public class ClaimService : IClaimService
             .OrderBy(u => _db.ClaimWorkflowSteps.Count(s => s.AssignedToUserId == u.Id && s.Status == WorkflowStepStatus.Current))
             .FirstOrDefaultAsync(ct);
 
-        if(adjuster != null)
+        if (adjuster != null)
         {
             firstStep.AssignedToUserId = adjuster.Id;
             claim.AssignedAdjusterId = adjuster.Id;
 
-            await _notificationService.NotifyAsync(adjuster, "New claim assigned to you", 
+            await _notificationService.NotifyAsync(adjuster, "New claim assigned to you",
                 $"Claim {claim.ClaimNumber} has been assigned to you for review.", claim.Id, ct);
         }
 
         await _db.SaveChangesAsync(ct);
+        await AddHistoryAsync(claim.Id, "ClaimSubmitted", oldStatus, claim.Status, claimantId, null, ct);
+
         await _notificationService.NotifyAsync(claim.Claimant, "Claim submitted",
             $"Your claim {claim.ClaimNumber} has been submitted and is now under review.", claim.Id, ct);
 
@@ -162,8 +167,8 @@ public class ClaimService : IClaimService
             case "Approver":
                 query = query.Where(c => c.AssignedApproverId == currentUser.UserId);
                 break;
-            
-            case "Admin": 
+
+            case "Admin":
                 break;
 
             default:
@@ -175,30 +180,30 @@ public class ClaimService : IClaimService
         {
             query = query.Where(c => c.ClaimNumber.Contains(filter.ClaimNumber));
         }
-        if(!string.IsNullOrWhiteSpace(filter.PolicyNumber))
+        if (!string.IsNullOrWhiteSpace(filter.PolicyNumber))
         {
             query = query.Where(c => c.PolicyNumber.Contains(filter.PolicyNumber));
         }
-        if(!string.IsNullOrWhiteSpace(filter.ClaimType))
+        if (!string.IsNullOrWhiteSpace(filter.ClaimType))
         {
             var claimType = Enum.Parse<ClaimType>(filter.ClaimType, ignoreCase: true);
             query = query.Where(c => c.ClaimType == claimType);
         }
-        if(!string.IsNullOrWhiteSpace(filter.Status))
+        if (!string.IsNullOrWhiteSpace(filter.Status))
         {
             var status = Enum.Parse<ClaimStatus>(filter.Status, ignoreCase: true);
             query = query.Where(c => c.Status == status);
         }
-        if(!string.IsNullOrWhiteSpace(filter.Severity))
+        if (!string.IsNullOrWhiteSpace(filter.Severity))
         {
             var severity = Enum.Parse<ClaimSeverity>(filter.Severity, ignoreCase: true);
             query = query.Where(c => c.Severity == severity);
         }
-        if(filter.FromDate.HasValue)
+        if (filter.FromDate.HasValue)
         {
             query = query.Where(c => c.CreatedAt >= filter.FromDate.Value);
         }
-        if(filter.ToDate.HasValue)
+        if (filter.ToDate.HasValue)
         {
             query = query.Where(c => c.CreatedAt <= filter.ToDate.Value);
         }
@@ -219,12 +224,27 @@ public class ClaimService : IClaimService
         };
     }
 
+    public async Task<List<ClaimHistoryDto>> GetClaimHistoryAsync(int claimId, CurrentUser currentUser, CancellationToken ct = default)
+    {
+        var claim = await ClaimsWithIncludes().FirstOrDefaultAsync(c => c.Id == claimId, ct)
+            ?? throw new NotFoundException("Claim", claimId);
+        EnsureCanView(claim, currentUser);
+
+        var history = await _db.ClaimHistories
+            .Include(h => h.PerformedBy)
+            .Where(h => h.ClaimId == claimId)
+            .OrderBy(h => h.CreatedAt)
+            .ToListAsync(ct);
+
+        return history.Select(h => h.ToDto()).ToList();
+    }
+
     public async Task<ClaimDocumentDto> UploadDocumentAsync(int claimId, int userId, Stream fileStream, string fileName, string contentType, long fileSize, CancellationToken ct = default)
     {
-        var claim = await _db.Claims.FirstOrDefaultAsync(c => c.Id == claimId, ct) 
+        var claim = await _db.Claims.FirstOrDefaultAsync(c => c.Id == claimId, ct)
             ?? throw new NotFoundException("Claim", claimId);
 
-        if(!_fileStorageService.IsAllowedFile(fileName, contentType, fileSize))
+        if (!_fileStorageService.IsAllowedFile(fileName, contentType, fileSize))
         {
             throw new ValidationException("Only files with size 10Mb and format PDF, JPG, PNG are allowed");
         }
@@ -244,6 +264,8 @@ public class ClaimService : IClaimService
         _db.ClaimDocuments.Add(doc);
         await _db.SaveChangesAsync(ct);
 
+        await AddHistoryAsync(claimId, "DocumentUploaded", null, null, userId, fileName, ct);
+
         return doc.ToDto();
     }
 
@@ -254,7 +276,7 @@ public class ClaimService : IClaimService
 
         EnsureAssignedAdjuster(claim, adjusterId);
 
-        if(claim.Status != ClaimStatus.UnderReview)
+        if (claim.Status != ClaimStatus.UnderReview)
         {
             throw new InvalidWorkflowTransitionException("Claim it not awaiting adjuster review.");
         }
@@ -266,9 +288,9 @@ public class ClaimService : IClaimService
         var claim = await ClaimsWithIncludes().FirstOrDefaultAsync(c => c.Id == claimId, ct)
             ?? throw new NotFoundException("Claim", claimId);
 
-        EnsureAssignedAdjuster(claim,adjusterId);
+        EnsureAssignedAdjuster(claim, adjusterId);
 
-        if(claim.Status != ClaimStatus.UnderReview)
+        if (claim.Status != ClaimStatus.UnderReview)
         {
             throw new InvalidWorkflowTransitionException("Claim is not awaiting adjuster review.");
         }
@@ -279,6 +301,8 @@ public class ClaimService : IClaimService
         claim.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(ct);
+        await AddHistoryAsync(claim.Id, "ClaimAdjusted", ClaimStatus.UnderReview, ClaimStatus.UnderAdjustment, adjusterId, request.Comments, ct);
+
         await _notificationService.NotifyAsync(claim.Claimant, "Claim Amount Adjusted",
             $"Claim with claim number {claim.ClaimNumber} amount is adjusted to {claim.AdjustedAmount}.", claim.Id, ct);
         return claim.ToDto();
@@ -301,6 +325,8 @@ public class ClaimService : IClaimService
         await _workflowService.PauseWorkflowAsync(claimId, request.Comments, ct);
         await _db.SaveChangesAsync(ct);
 
+        await AddHistoryAsync(claim.Id, "AdditionalDocumentsRequested", oldStatus, claim.Status, adjusterId, request.Comments, ct);
+
         await _notificationService.NotifyAsync(claim.Claimant, "Additional documents required",
             $"Please upload additional documents for claim {claim.ClaimNumber}. Note: {request.Comments}", claim.Id, ct);
 
@@ -314,17 +340,18 @@ public class ClaimService : IClaimService
 
         EnsureOwnedByClaimant(claim, claimantId);
 
-        if(claim.Status != ClaimStatus.AdditionalDocumentsRequired)
+        if (claim.Status != ClaimStatus.AdditionalDocumentsRequired)
         {
             throw new InvalidWorkflowTransitionException("Claim is not awaiting additional documents.");
         }
 
-        var oldStaus = claim.Status;
+        var oldStatus = claim.Status;
         claim.Status = ClaimStatus.UnderReview;
         claim.UpdatedAt = DateTime.UtcNow;
 
-        await _workflowService.ResumeWorkflowAsync(claimId,ct);
+        await _workflowService.ResumeWorkflowAsync(claimId, ct);
         await _db.SaveChangesAsync(ct);
+        await AddHistoryAsync(claim.Id, "DocumentsResubmitted", oldStatus, claim.Status, claimantId, null, ct);
 
         if (claim.AssignedAdjuster != null)
             await _notificationService.NotifyAsync(claim.AssignedAdjuster, "Additional documents received",
@@ -344,14 +371,14 @@ public class ClaimService : IClaimService
             throw new InvalidWorkflowTransitionException("Claim is not awaiting adjuster completion.");
 
         //Get the current step for this claimworkflow
-        var currentStep = await _workflowService.GetCurrentStepAsync(claimId,ct) ?? throw new NotFoundException("Current workflow step for claim", claimId);
+        var currentStep = await _workflowService.GetCurrentStepAsync(claimId, ct) ?? throw new NotFoundException("Current workflow step for claim", claimId);
 
         var oldStatus = claim.Status;
 
-        var completedStep = await _workflowService.CompleteStepAsync(currentStep.Id,adjusterId, request.Comments, ct);
-        var nextStep = await _workflowService.GetCurrentStepAsync(claim.Id,ct);
+        var completedStep = await _workflowService.CompleteStepAsync(currentStep.Id, adjusterId, request.Comments, ct);
+        var nextStep = await _workflowService.GetCurrentStepAsync(claim.Id, ct);
 
-        if(nextStep != null)
+        if (nextStep != null)
         {
             var roleName = nextStep.WorkflowStep.ResponsibleRole switch
             {
@@ -364,10 +391,10 @@ public class ClaimService : IClaimService
                 .OrderBy(u => _db.ClaimWorkflowSteps.Count(s => s.AssignedToUserId == u.Id && s.Status == WorkflowStepStatus.Current))
                 .FirstOrDefaultAsync(ct);
 
-            if(assignee != null)
+            if (assignee != null)
             {
                 nextStep.AssignedToUserId = assignee.Id;
-                if(roleName == RoleType.Approver) claim.AssignedApproverId = assignee.Id;
+                if (roleName == RoleType.Approver) claim.AssignedApproverId = assignee.Id;
                 await _notificationService.NotifyAsync(assignee, "Claim requires your review",
                     $"Claim {claim.ClaimNumber} is ready for {nextStep.WorkflowStep.Name}.", claim.Id, ct);
             }
@@ -382,8 +409,9 @@ public class ClaimService : IClaimService
 
         claim.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
+        await AddHistoryAsync(claim.Id, "AdjusterReviewCompleted", oldStatus, claim.Status, adjusterId, request.Comments, ct);
 
-        if(claim.Status == ClaimStatus.Approved)
+        if (claim.Status == ClaimStatus.Approved)
         {
             await FinalizeApprovalAsync(claim, ct);
         }
@@ -397,26 +425,26 @@ public class ClaimService : IClaimService
 
         EnsureAssignedApprover(claim, approverId);
 
-        if(claim.Status != ClaimStatus.PendingApproval)
+        if (claim.Status != ClaimStatus.PendingApproval)
         {
             throw new InvalidWorkflowTransitionException("Claim is not pending approval");
         }
 
-        var currentStep = await _workflowService.GetCurrentStepAsync(claimId, ct) 
+        var currentStep = await _workflowService.GetCurrentStepAsync(claimId, ct)
             ?? throw new NotFoundException("Current workflow step for claim", claimId);
-        
+
         var oldStatus = claim.Status;
-        var completedStep = await _workflowService.CompleteStepAsync(currentStep.Id, approverId, request.Comments,ct);
+        var completedStep = await _workflowService.CompleteStepAsync(currentStep.Id, approverId, request.Comments, ct);
         var nextStep = await _workflowService.GetCurrentStepAsync(claimId, ct);
 
-        if(nextStep != null)
+        if (nextStep != null)
         {
             var assignee = await _db.Users.Include(u => u.Role)
                 .Where(u => u.Role.Name == RoleType.Approver && u.IsActive && u.Id != approverId)
                 .OrderBy(u => _db.ClaimWorkflowSteps.Count(s => s.AssignedToUserId == u.Id && s.Status == WorkflowStepStatus.Current))
                 .FirstOrDefaultAsync(ct);
 
-            if(assignee != null)
+            if (assignee != null)
             {
                 nextStep.AssignedToUserId = assignee.Id;
                 claim.AssignedApproverId = assignee.Id;
@@ -434,8 +462,9 @@ public class ClaimService : IClaimService
 
         claim.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
+        await AddHistoryAsync(claim.Id, "ClaimApproved", oldStatus, claim.Status, approverId, request.Comments, ct);
 
-        if(claim.Status == ClaimStatus.Approved)
+        if (claim.Status == ClaimStatus.Approved)
         {
             await FinalizeApprovalAsync(claim, ct);
         }
@@ -457,8 +486,10 @@ public class ClaimService : IClaimService
         claim.Status = ClaimStatus.Rejected;
         claim.UpdatedAt = DateTime.UtcNow;
 
-        await _workflowService.RejectWorkflowAsync(claimId,ct);
+        await _workflowService.RejectWorkflowAsync(claimId, ct);
         await _db.SaveChangesAsync();
+
+        await AddHistoryAsync(claim.Id, "ClaimRejected", oldStatus, claim.Status, approverId, request.Comments, ct);
 
         await _notificationService.NotifyAsync(claim.Claimant, "Claim rejected",
             $"Your claim {claim.ClaimNumber} was rejected. Reason: {request.Comments}", claim.Id, ct);
@@ -471,6 +502,22 @@ public class ClaimService : IClaimService
         await _notificationService.NotifyAsync(claim.Claimant, "Claim approved",
             $"Your claim {claim.ClaimNumber} has been approved for {claim.ApprovedAmount:C}.", claim.Id, ct);
         claim.Status = ClaimStatus.PaymentPending;
+        await _db.SaveChangesAsync(ct);
+        await AddHistoryAsync(claim.Id, "PaymentInitiated", ClaimStatus.Approved, ClaimStatus.PaymentPending, null, null, ct);
+
+    }
+
+    private async Task AddHistoryAsync(int claimId, string action, ClaimStatus? oldStatus, ClaimStatus? newStatus, int? performedBy, string? comments, CancellationToken ct)
+    {
+        _db.ClaimHistories.Add(new ClaimHistory
+        {
+            ClaimId = claimId,
+            Action = action,
+            OldStatus = oldStatus,
+            NewStatus = newStatus,
+            PerformedByUserId = performedBy,
+            Comments = comments
+        });
         await _db.SaveChangesAsync(ct);
     }
 }

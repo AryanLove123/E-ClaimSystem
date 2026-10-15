@@ -40,3 +40,12 @@ export interface ClaimFilter {
   pageNumber: number;
   pageSize: number;
 }
+
+export interface ClaimHistoryItem {
+  action: string;
+  oldStatus?: string;
+  newStatus?: string;
+  performedByName?: string;
+  comments?: string;
+  createdAt: string;
+}
