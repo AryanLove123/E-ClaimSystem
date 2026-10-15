@@ -295,6 +295,56 @@ namespace EClaim.Infrastructure.Migrations
                     b.ToTable("ClaimWorkflowSteps", (string)null);
                 });
 
+            modelBuilder.Entity("EClaim.Domain.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ClaimId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<bool>("SentSuccessfully")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClaimId");
+
+                    b.HasIndex("UserId", "Type", "IsRead", "CreatedAt");
+
+                    b.ToTable("Notifications", (string)null);
+                });
+
             modelBuilder.Entity("EClaim.Domain.Entities.Role", b =>
                 {
                     b.Property<int>("Id")
@@ -576,6 +626,24 @@ namespace EClaim.Infrastructure.Migrations
                     b.Navigation("ClaimWorkflow");
 
                     b.Navigation("WorkflowStep");
+                });
+
+            modelBuilder.Entity("EClaim.Domain.Entities.Notification", b =>
+                {
+                    b.HasOne("EClaim.Domain.Entities.Claim", "Claim")
+                        .WithMany()
+                        .HasForeignKey("ClaimId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("EClaim.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Claim");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("EClaim.Domain.Entities.User", b =>

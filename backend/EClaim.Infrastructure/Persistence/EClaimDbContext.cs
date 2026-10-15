@@ -17,6 +17,7 @@ public class EClaimDbContext : DbContext, IEClaimDbContext
     public DbSet<WorkflowStep> WorkflowSteps => Set<WorkflowStep>();
     public DbSet<ClaimWorkflow> ClaimWorkflows => Set<ClaimWorkflow>();
     public DbSet<ClaimWorkflowStep> ClaimWorkflowSteps => Set<ClaimWorkflowStep>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

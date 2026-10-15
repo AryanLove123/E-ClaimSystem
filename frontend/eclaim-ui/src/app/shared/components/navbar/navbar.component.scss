@@ -1,0 +1,100 @@
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+
+  background: var(--color-navbar-bg);
+  color: var(--color-navbar-text);
+
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.logo {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--color-navbar-text);
+}
+
+.role-badge {
+  background: var(--color-navbar-accent);
+  color: var(--color-navbar-bg);
+
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.navbar-links a {
+  color: var(--color-navbar-link);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color var(--transition-fast);
+}
+
+.navbar-links a:hover,
+.navbar-links a.active {
+  color: var(--color-navbar-text);
+}
+
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.navbar-user button {
+  background: transparent;
+  border: 1px solid var(--color-navbar-link);
+  color: var(--color-navbar-text);
+
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.7rem;
+  font: inherit;
+  cursor: pointer;
+
+  transition: background-color var(--transition-fast);
+}
+
+.navbar-user button:hover {
+  background: var(--color-navbar-hover-bg);
+}
+
+.navbar-user button:focus-visible,
+.navbar-links a:focus-visible {
+  outline: 2px solid var(--color-navbar-accent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0.75rem 1rem;
+  }
+
+  .navbar-links {
+    gap: 0.75rem;
+  }
+
+  .navbar-user {
+    flex-wrap: wrap;
+  }
+}

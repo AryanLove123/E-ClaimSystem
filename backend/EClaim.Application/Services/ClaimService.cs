@@ -15,12 +15,14 @@ public class ClaimService : IClaimService
     private IEClaimDbContext _db;
     private IWorkflowService _workflowService;
     private IFileStorageService _fileStorageService;
+    private INotificationService _notificationService;
 
-    public ClaimService(IEClaimDbContext db, IWorkflowService workflowService, IFileStorageService fileStorageService)
+    public ClaimService(IEClaimDbContext db, IWorkflowService workflowService, IFileStorageService fileStorageService, INotificationService notificationService)
     {
         _db = db;
         _workflowService = workflowService;
         _fileStorageService = fileStorageService;
+        _notificationService = notificationService;
     }
 
     private static void EnsureCanView(ClaimEntity claim, CurrentUser currentUser)
@@ -124,9 +126,14 @@ public class ClaimService : IClaimService
         {
             firstStep.AssignedToUserId = adjuster.Id;
             claim.AssignedAdjusterId = adjuster.Id;
+
+            await _notificationService.NotifyAsync(adjuster, "New claim assigned to you", 
+                $"Claim {claim.ClaimNumber} has been assigned to you for review.", claim.Id, ct);
         }
 
         await _db.SaveChangesAsync(ct);
+        await _notificationService.NotifyAsync(claim.Claimant, "Claim submitted",
+            $"Your claim {claim.ClaimNumber} has been submitted and is now under review.", claim.Id, ct);
 
         return claim.ToDto();
     }
@@ -272,6 +279,8 @@ public class ClaimService : IClaimService
         claim.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(ct);
+        await _notificationService.NotifyAsync(claim.Claimant, "Claim Amount Adjusted",
+            $"Claim with claim number {claim.ClaimNumber} amount is adjusted to {claim.AdjustedAmount}.", claim.Id, ct);
         return claim.ToDto();
     }
 
@@ -291,6 +300,9 @@ public class ClaimService : IClaimService
 
         await _workflowService.PauseWorkflowAsync(claimId, request.Comments, ct);
         await _db.SaveChangesAsync(ct);
+
+        await _notificationService.NotifyAsync(claim.Claimant, "Additional documents required",
+            $"Please upload additional documents for claim {claim.ClaimNumber}. Note: {request.Comments}", claim.Id, ct);
 
         return claim.ToDto();
     }
@@ -313,6 +325,10 @@ public class ClaimService : IClaimService
 
         await _workflowService.ResumeWorkflowAsync(claimId,ct);
         await _db.SaveChangesAsync(ct);
+
+        if (claim.AssignedAdjuster != null)
+            await _notificationService.NotifyAsync(claim.AssignedAdjuster, "Additional documents received",
+                $"Claimant uploaded the requested documents for claim {claim.ClaimNumber}. Please continue review.", claim.Id, ct);
 
         return claim.ToDto();
     }
@@ -352,6 +368,8 @@ public class ClaimService : IClaimService
             {
                 nextStep.AssignedToUserId = assignee.Id;
                 if(roleName == RoleType.Approver) claim.AssignedApproverId = assignee.Id;
+                await _notificationService.NotifyAsync(assignee, "Claim requires your review",
+                    $"Claim {claim.ClaimNumber} is ready for {nextStep.WorkflowStep.Name}.", claim.Id, ct);
             }
 
             claim.Status = ClaimStatus.PendingApproval;
@@ -404,6 +422,8 @@ public class ClaimService : IClaimService
                 claim.AssignedApproverId = assignee.Id;
 
                 await _db.SaveChangesAsync(ct);
+                await _notificationService.NotifyAsync(assignee, "Claim requires your approval",
+                    $"Claim {claim.ClaimNumber} requires senior approval.", claim.Id, ct);
             }
         }
         else
@@ -440,11 +460,16 @@ public class ClaimService : IClaimService
         await _workflowService.RejectWorkflowAsync(claimId,ct);
         await _db.SaveChangesAsync();
 
+        await _notificationService.NotifyAsync(claim.Claimant, "Claim rejected",
+            $"Your claim {claim.ClaimNumber} was rejected. Reason: {request.Comments}", claim.Id, ct);
+
         return claim.ToDto();
     }
 
     private async Task FinalizeApprovalAsync(ClaimEntity claim, CancellationToken ct)
     {
+        await _notificationService.NotifyAsync(claim.Claimant, "Claim approved",
+            $"Your claim {claim.ClaimNumber} has been approved for {claim.ApprovedAmount:C}.", claim.Id, ct);
         claim.Status = ClaimStatus.PaymentPending;
         await _db.SaveChangesAsync(ct);
     }

@@ -14,6 +14,11 @@
   --color-bg-muted: #f1f5f9;
   --color-bg-subtle: #f8fafc;
 
+  --color-navbar-bg: #10315b;
+  --color-navbar-text: #ffffff;
+  --color-navbar-link: #d7e3f4;
+  --color-navbar-accent: #ffb703;
+  --color-navbar-hover-bg: rgba(255, 255, 255, 0.12);
 
   --color-text-primary: #0f172a;
   --color-text-secondary: #475569;
@@ -22,11 +27,20 @@
   --color-text-disabled: #cbd5e1;
   --color-text-on-primary: #ffffff;
 
+  --color-notification-badge: #dc2626;
+  --color-notification-panel-text: #1e293b;
+  --color-notification-unread-bg: #eff6ff;
+  --color-notification-unread-hover: #e0efff;
+  --color-notification-item-hover: #f8fafc;
+  --color-notification-dot: #dc2626;
+
 
   --color-border: #e2e8f0;
   --color-border-input: #cbd5e1;
   --color-border-focus: var(--color-primary);
 
+   --color-border-subtle: #f1f5f9;
+  --color-overlay-shadow: rgba(0, 0, 0, 0.18);
 
   --color-error: #b91c1c;
   --color-error-bg: #fef2f2;

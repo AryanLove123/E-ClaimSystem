@@ -1,0 +1,45 @@
+<nav class="navbar">
+    <div class="navbar-brand">
+        <span class="logo">E-Claim System</span>
+        <span [class.role-badge]="authService.currentUser()?.role">
+            {{ authService.currentUser()?.role }}
+        </span>
+    </div>
+    @if(authService.isAuthenticated()){
+    <div class="navbar-links">
+        @if(authService.currentRole() == 'Claimant'){
+        <ng-container>
+            <a routerLink="/claimant/dashboard">Dashboard</a>
+            <a routerLink="/claimant/claims">My Claims</a>
+            <a routerLink="/claimant/create-claim">New Claim</a>
+            <a routerLink="/claimant/profile">Profile</a>
+        </ng-container>
+        }
+        @else if(authService.currentRole() == 'Adjuster'){
+        <ng-container>
+            <a routerLink="/adjuster/dashboard">Dashboard</a>
+        </ng-container>
+        }
+        @else if(authService.currentRole() == 'Approver'){
+        <ng-container>
+            <a routerLink="/approver/dashboard">Dashboard</a>
+        </ng-container>
+        }
+        @else{
+        <ng-container>
+            <a routerLink="/admin/dashboard">Dashboard</a>
+            <a routerLink="/admin/users">Users</a>
+            <a routerLink="/admin/workflows">Workflows</a>
+            <a routerLink="/admin/reports">Reports</a>
+        </ng-container>
+        }
+    </div>
+    <div class="navbar-user">
+        <app-notification-bell></app-notification-bell>
+        <span>{{ authService.currentUser()?.fullName }}</span>
+        <button (click)="logout()">Logout</button>
+    </div>
+    }
+
+    
+</nav>
