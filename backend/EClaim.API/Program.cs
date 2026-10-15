@@ -9,6 +9,7 @@ using EClaim.Infrastructure;
 using EClaim.Application;
 using Microsoft.OpenApi.Models;
 using EClaim.Application.Services;
+using Eclaim.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,7 @@ builder.Services.AddScoped<IWorkflowService, WorkflowService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
 
 builder.Services.AddControllers();
 
@@ -120,6 +122,8 @@ using(var scope = app.Services.CreateScope())
     var DbContext = scope.ServiceProvider.GetRequiredService<EClaimDbContext>();
     await EClaimDbSeeder.SeedAsync(DbContext);
 }
+
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

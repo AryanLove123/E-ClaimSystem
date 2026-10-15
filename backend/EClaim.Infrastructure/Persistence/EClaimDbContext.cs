@@ -18,7 +18,8 @@ public class EClaimDbContext : DbContext, IEClaimDbContext
     public DbSet<ClaimWorkflow> ClaimWorkflows => Set<ClaimWorkflow>();
     public DbSet<ClaimWorkflowStep> ClaimWorkflowSteps => Set<ClaimWorkflowStep>();
     public DbSet<Notification> Notifications => Set<Notification>();
-
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<ErrorLog> ErrorLogs => Set<ErrorLog>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(EClaimDbContext).Assembly);

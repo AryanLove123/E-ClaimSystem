@@ -11,10 +11,12 @@ namespace EClaim.Application.Services;
 public class WorkflowService : IWorkflowService
 {
     private IEClaimDbContext _db;
+    private IAuditService _auditService;
 
-    public WorkflowService(IEClaimDbContext db)
+    public WorkflowService(IEClaimDbContext db, IAuditService auditService)
     {
         _db = db;
+        _auditService = auditService;
     }
 
     private static int Specificity(Workflow w) =>
@@ -73,6 +75,8 @@ public class WorkflowService : IWorkflowService
         _db.ClaimWorkflows.Add(claimWorkflow);
         await _db.SaveChangesAsync(ct);
 
+        await _auditService.LogAsync(null, "WorkflowStarted", "Claim", claim.Id.ToString(), newValue: workflow.Name, ct: ct);
+
         return claimWorkflow;
     }
     
@@ -118,6 +122,8 @@ public class WorkflowService : IWorkflowService
         }
 
         await _db.SaveChangesAsync(ct);
+        await _auditService.LogAsync(performedByUserId, "WorkflowStepCompleted", "ClaimWorkflowStep", step.Id.ToString(), ct: ct);
+
         return step;
     }
 
@@ -134,6 +140,7 @@ public class WorkflowService : IWorkflowService
 
         claimWorkflow.Status = WorkflowInstanceStatus.Paused;
         await _db.SaveChangesAsync(ct);
+        await _auditService.LogAsync(null, "WorkflowPaused", "Claim", claimId.ToString(), newValue: reason, ct: ct);
     }
 
     public async Task ResumeWorkflowAsync(int claimId, CancellationToken ct = default)
@@ -149,6 +156,7 @@ public class WorkflowService : IWorkflowService
 
         claimWorkflow.Status = WorkflowInstanceStatus.Active;
         await _db.SaveChangesAsync(ct);
+        await _auditService.LogAsync(null, "WorkflowResumed", "Claim", claimId.ToString(), ct: ct);
     }
 
     public async Task RejectWorkflowAsync(int claimId, CancellationToken ct = default)
@@ -163,6 +171,7 @@ public class WorkflowService : IWorkflowService
         var currentStep = claimWorkflow.Steps.FirstOrDefault(s => s.Status == WorkflowStepStatus.Current);
         currentStep?.Status = WorkflowStepStatus.Skipped;
         await _db.SaveChangesAsync(ct);
+        await _auditService.LogAsync(null, "WorkflowRejected", "Claim", claimId.ToString(), ct: ct);
     }
 
     public async Task<ClaimWorkflowStatusDto> GetWorkflowStatusAsync(int claimId, CancellationToken ct = default)

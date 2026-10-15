@@ -15,5 +15,7 @@ public interface IEClaimDbContext
     DbSet<ClaimWorkflow> ClaimWorkflows { get; }
     DbSet<ClaimWorkflowStep> ClaimWorkflowSteps { get; }
     DbSet<Notification> Notifications { get; }
+    DbSet<AuditLog> AuditLogs { get; }
+    DbSet<ErrorLog> ErrorLogs { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

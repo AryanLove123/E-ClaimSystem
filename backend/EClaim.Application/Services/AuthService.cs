@@ -14,14 +14,16 @@ public class AuthService : IAuthService
 
     private IJwtTokenGenerator _jwtTokenGenerator;
     private IEmailService _emailService;
+    private IAuditService _auditService;
 
 
-    public AuthService(IEClaimDbContext db, IPasswordHasher passwordHasher, IJwtTokenGenerator jwtTokenGenerator, IEmailService emailService)
+    public AuthService(IEClaimDbContext db, IPasswordHasher passwordHasher, IJwtTokenGenerator jwtTokenGenerator, IEmailService emailService, IAuditService auditService)
     {
         _db = db;
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
         _emailService = emailService;
+        _auditService = auditService;
     }
 
     public async Task<int> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
@@ -56,6 +58,7 @@ public class AuthService : IAuthService
             $"Hi {user.FullName}, \n\nPlease verify email by visiting:\n{verifyLink}\n\nThis link expires in 24 hours",
             ct
         );
+        await _auditService.LogAsync(null, "UserRegistered", "User", user.Id.ToString(), ct: ct);
 
         return user.Id;
     }
@@ -80,6 +83,8 @@ public class AuthService : IAuthService
         user.EmailVerificationToken = null;
         user.EmailVerificationTokenExpiresAt = null;
         await context.SaveChangesAsync(ct);
+
+        await _auditService.LogAsync(user.Id, "EmailVerified", "User", user.Id.ToString(), ct: ct);
     }
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
@@ -101,6 +106,8 @@ public class AuthService : IAuthService
             throw new ValidationException("Please verify your email before logging in.");
 
         var (token, expiresAt) = _jwtTokenGenerator.GenerateToken(user);
+
+        await _auditService.LogAsync(user.Id, "UserLoggedIn", "User", user.Id.ToString(), ct: ct);
 
         return new AuthResponse
         {

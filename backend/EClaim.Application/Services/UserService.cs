@@ -10,10 +10,12 @@ namespace EClaim.Application.Services;
 public class UserService : IUserService
 {
     private IEClaimDbContext _db;
+    private IAuditService _auditService; 
 
-    public UserService(IEClaimDbContext db)
+    public UserService(IEClaimDbContext db, IAuditService auditService)
     {
         _db = db;
+        _auditService = auditService;
     }
 
     public async Task<UserProfileDto> GetProfileAsync(int userId, CancellationToken ct = default)
@@ -34,6 +36,8 @@ public class UserService : IUserService
         
         await _db.SaveChangesAsync(ct);
 
+        await _auditService.LogAsync(userId, "ProfileUpdated", "User", userId.ToString(), ct: ct);
+
         return user.ToProfileDto();
     }
 
@@ -51,5 +55,7 @@ public class UserService : IUserService
         user.IsActive = isActive;
         user.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
+
+        await _auditService.LogAsync(userId, isActive ? "UserActivated" : "UserDeactivated", "User", userId.ToString(), ct: ct);
     }
 }

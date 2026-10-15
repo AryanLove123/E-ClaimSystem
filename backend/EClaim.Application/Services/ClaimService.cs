@@ -16,13 +16,15 @@ public class ClaimService : IClaimService
     private IWorkflowService _workflowService;
     private IFileStorageService _fileStorageService;
     private INotificationService _notificationService;
+    private IAuditService _auditService; 
 
-    public ClaimService(IEClaimDbContext db, IWorkflowService workflowService, IFileStorageService fileStorageService, INotificationService notificationService)
+    public ClaimService(IEClaimDbContext db, IWorkflowService workflowService, IFileStorageService fileStorageService, INotificationService notificationService, IAuditService auditService)
     {
         _db = db;
         _workflowService = workflowService;
         _fileStorageService = fileStorageService;
         _notificationService = notificationService;
+        _auditService = auditService;
     }
 
     private static void EnsureCanView(ClaimEntity claim, CurrentUser currentUser)
@@ -94,6 +96,7 @@ public class ClaimService : IClaimService
         await _db.SaveChangesAsync(ct);
 
         await AddHistoryAsync(claim.Id, "ClaimCreated", null, ClaimStatus.Draft, claimantId, null, ct);
+        await _auditService.LogAsync(claimantId, "ClaimCreated", "Claim", claim.Id.ToString(), ct: ct);
 
         var reloaded = await ClaimsWithIncludes().FirstAsync(c => c.Id == claim.Id, ct);
         return reloaded.ToDto();
@@ -136,6 +139,7 @@ public class ClaimService : IClaimService
 
         await _db.SaveChangesAsync(ct);
         await AddHistoryAsync(claim.Id, "ClaimSubmitted", oldStatus, claim.Status, claimantId, null, ct);
+        await _auditService.LogAsync(claimantId, "ClaimSubmitted", "Claim", claim.Id.ToString(), oldStatus.ToString(), claim.Status.ToString(), ct);
 
         await _notificationService.NotifyAsync(claim.Claimant, "Claim submitted",
             $"Your claim {claim.ClaimNumber} has been submitted and is now under review.", claim.Id, ct);
@@ -265,6 +269,7 @@ public class ClaimService : IClaimService
         await _db.SaveChangesAsync(ct);
 
         await AddHistoryAsync(claimId, "DocumentUploaded", null, null, userId, fileName, ct);
+        await _auditService.LogAsync(userId, "DocumentUploaded", "Claim", claimId.ToString(), newValue: fileName, ct: ct);
 
         return doc.ToDto();
     }
@@ -302,6 +307,7 @@ public class ClaimService : IClaimService
 
         await _db.SaveChangesAsync(ct);
         await AddHistoryAsync(claim.Id, "ClaimAdjusted", ClaimStatus.UnderReview, ClaimStatus.UnderAdjustment, adjusterId, request.Comments, ct);
+        await _auditService.LogAsync(adjusterId, "ClaimAmountAdjusted", "Claim", claim.Id.ToString(), oldAmount, request.AdjustedAmount.ToString(), ct);
 
         await _notificationService.NotifyAsync(claim.Claimant, "Claim Amount Adjusted",
             $"Claim with claim number {claim.ClaimNumber} amount is adjusted to {claim.AdjustedAmount}.", claim.Id, ct);
@@ -326,6 +332,7 @@ public class ClaimService : IClaimService
         await _db.SaveChangesAsync(ct);
 
         await AddHistoryAsync(claim.Id, "AdditionalDocumentsRequested", oldStatus, claim.Status, adjusterId, request.Comments, ct);
+        await _auditService.LogAsync(adjusterId, "AdditionalDocumentsRequested", "Claim", claim.Id.ToString(), ct: ct);
 
         await _notificationService.NotifyAsync(claim.Claimant, "Additional documents required",
             $"Please upload additional documents for claim {claim.ClaimNumber}. Note: {request.Comments}", claim.Id, ct);
@@ -410,6 +417,7 @@ public class ClaimService : IClaimService
         claim.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
         await AddHistoryAsync(claim.Id, "AdjusterReviewCompleted", oldStatus, claim.Status, adjusterId, request.Comments, ct);
+        await _auditService.LogAsync(adjusterId, "AdjusterReviewCompleted", "Claim", claim.Id.ToString(), oldStatus.ToString(), claim.Status.ToString(), ct);
 
         if (claim.Status == ClaimStatus.Approved)
         {
@@ -463,6 +471,7 @@ public class ClaimService : IClaimService
         claim.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         await AddHistoryAsync(claim.Id, "ClaimApproved", oldStatus, claim.Status, approverId, request.Comments, ct);
+        await _auditService.LogAsync(approverId, "ClaimApproved", "Claim", claim.Id.ToString(), oldStatus.ToString(), claim.Status.ToString(), ct);
 
         if (claim.Status == ClaimStatus.Approved)
         {
@@ -490,6 +499,7 @@ public class ClaimService : IClaimService
         await _db.SaveChangesAsync();
 
         await AddHistoryAsync(claim.Id, "ClaimRejected", oldStatus, claim.Status, approverId, request.Comments, ct);
+        await _auditService.LogAsync(approverId, "ClaimRejected", "Claim", claim.Id.ToString(), oldStatus.ToString(), claim.Status.ToString(), ct);
 
         await _notificationService.NotifyAsync(claim.Claimant, "Claim rejected",
             $"Your claim {claim.ClaimNumber} was rejected. Reason: {request.Comments}", claim.Id, ct);
@@ -504,7 +514,6 @@ public class ClaimService : IClaimService
         claim.Status = ClaimStatus.PaymentPending;
         await _db.SaveChangesAsync(ct);
         await AddHistoryAsync(claim.Id, "PaymentInitiated", ClaimStatus.Approved, ClaimStatus.PaymentPending, null, null, ct);
-
     }
 
     private async Task AddHistoryAsync(int claimId, string action, ClaimStatus? oldStatus, ClaimStatus? newStatus, int? performedBy, string? comments, CancellationToken ct)
