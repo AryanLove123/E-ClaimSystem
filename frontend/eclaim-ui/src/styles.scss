@@ -9,6 +9,17 @@
   --color-primary-light: #eff6ff;
   --color-primary-border: #bfdbfe;
 
+  --color-secondary: #374151;
+  --color-secondary-hover: #232830;
+  --color-secondary-active: #2e313d;
+
+
+  --color-danger: #da4242;
+  --color-danger-hover: #ab2626;
+  --color-danger-active: #d85428;
+
+
+
   --color-bg-page: #f8fafc;
   --color-bg-surface: #ffffff;
   --color-bg-muted: #f1f5f9;
@@ -197,7 +208,7 @@ body {
 
 .btn {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.875rem;
   border: none;
   border-radius: var(--radius-sm);
   font-size: 0.95rem;
@@ -229,6 +240,32 @@ body {
 
   &:active:not(:disabled) {
     background: var(--color-primary-active);
+  }
+}
+
+.btn-secondary {
+  background: var(--color-secondary);
+  color: var(--color-text-on-primary);
+
+  &:hover:not(:disabled) {
+    background: var(--color-secondary-hover);
+  }
+
+  &:active:not(:disabled) {
+    background: var(--color-secondary-active);
+  }
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: var(--color-text-on-primary);
+
+  &:hover:not(:disabled) {
+    background: var(--color-danger-hover);
+  }
+
+  &:active:not(:disabled) {
+    background: var(--color-danger-active);
   }
 }
 

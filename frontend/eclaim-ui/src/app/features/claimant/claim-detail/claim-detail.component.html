@@ -75,22 +75,26 @@
 
     <!-- Adjuster Actions -->
     @if (isAdjuster() && (claim.status == "UnderReview" || claim.status == "UnderAdjustment")) {
-    <h3 style="margin-top: 0;">Adjuster Actions</h3>
+    <section class="claim-card">
+        <h3 style="margin-top: 0;">Adjuster Actions</h3>
 
-    <div class="form-group">
-        <label>Adjusted Amount</label>
-        <input type="number" class="form-control" [value]="adjustAmount()"
-            (input)="adjustAmount.set(+$any($event.target).value)" />
-    </div>
-    <div class="form-group">
-        <label>Comments</label>
-        <textarea rows="2" class="form-control" [value]="comments()"
-            (input)="comments.set($any($event.target).value)"></textarea>
-    </div>
+        <div class="form-group">
+            <label>Adjusted Amount</label>
+            <input type="number" class="form-control" [value]="adjustAmount()"
+                (input)="adjustAmount.set(+$any($event.target).value)" />
+        </div>
+        <div class="form-group">
+            <label>Comments</label>
+            <textarea rows="2" class="form-control" [value]="comments()"
+                (input)="comments.set($any($event.target).value)"></textarea>
+        </div>
 
-    <button class="btn btn-secondary" (click)="adjustClaim()">Adjust Amount</button>
-    <button class="btn btn-primary" (click)="completeReview()">Complete Review (send to next step)</button>
-    <button class="btn btn-danger" (click)="requestDocuments()">Request Additional Documents</button>
+        <div class="action-buttons">
+            <button class="btn btn-secondary" (click)="adjustClaim()">Adjust Amount</button>
+            <button class="btn btn-danger" (click)="requestDocuments()">Request Additional Documents</button>
+            <button class="btn btn-primary" (click)="completeReview()">Complete Review (send to next step)</button>
+        </div>
+    </section>
     }
 
     <!-- Approver Actions -->
@@ -125,28 +129,30 @@
     @if(workflowStatus(); as Wfstatus){
     <div class="claim-card">
         <h3 style="margin-top:0;">Workflow: {{ Wfstatus.workflowName }} ({{ Wfstatus.status }})</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Step</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Assigned to</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for(s of Wfstatus.steps; track s.stepOrder){
-                <tr>
-                    <td>{{ s.stepOrder }}. {{ s.name }}</td>
-                    <td>{{ s.responsibleRole }}</td>
-                    <td>
-                        <app-status-badge [status]="s.status"></app-status-badge>
-                    </td>
-                    <td>{{ s.assignedToName ?? '—' }}</td>
-                </tr>
-                }
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Step</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Assigned to</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for(s of Wfstatus.steps; track s.stepOrder){
+                    <tr>
+                        <td>{{ s.stepOrder }}. {{ s.name }}</td>
+                        <td>{{ s.responsibleRole }}</td>
+                        <td>
+                            <app-status-badge [status]="s.status"></app-status-badge>
+                        </td>
+                        <td>{{ s.assignedToName ?? '—' }}</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
     }
 
@@ -166,13 +172,13 @@
                 </thead>
                 <tbody>
                     @for(h of history(); track h){
-                        <tr>
-                            <td>{{ h.createdAt | date:'short' }}</td>
-                            <td>{{ h.action }}</td>
-                            <td>{{ h.oldStatus }} <span *ngIf="h.newStatus"> → {{ h.newStatus }}</span></td>
-                            <td>{{ h.performedByName ?? 'System' }}</td>
-                            <td>{{ h.comments }}</td>
-                        </tr>
+                    <tr>
+                        <td>{{ h.createdAt | date:'short' }}</td>
+                        <td>{{ h.action }}</td>
+                        <td>{{ h.oldStatus }} <span *ngIf="h.newStatus"> → {{ h.newStatus }}</span></td>
+                        <td>{{ h.performedByName ?? 'System' }}</td>
+                        <td>{{ h.comments }}</td>
+                    </tr>
                     }
                 </tbody>
             </table>

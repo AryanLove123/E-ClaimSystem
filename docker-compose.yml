@@ -1,0 +1,52 @@
+name: eclaim
+
+services:
+  eclaim-mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: eclaimdb
+      MYSQL_USER: eclaim
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  eclaim-api:
+    build:
+      context: .
+      dockerfile: backend/EClaim.API/Dockerfile
+    image: eclaim-api:1.0
+    restart: unless-stopped
+    depends_on:
+      eclaim-mysql:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=eclaim-mysql;Port=3306;Database=eclaimdb;User=eclaim;Password=${MYSQL_PASSWORD};TreatTinyAsBoolean=true;AllowPublicKeyRetrieval=true;"
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env (32+ characters)}
+      Email__BrevoApiKey: ${BREVO_API_KEY:-}
+    ports:
+      - "5108:8080"
+    volumes:
+      - uploads-data:/app/App_Data/uploads   # claim documents; must match your Storage BasePath
+
+  frontend:
+    build:
+      context: ./frontend/eclaim-ui
+    image: eclaim-frontend:1.0
+    restart: unless-stopped
+    depends_on:
+      - eclaim-api
+    ports:
+      - "4200:80"
+
+volumes:
+  mysql-data:
+  uploads-data:

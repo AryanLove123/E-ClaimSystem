@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eclaim-config
+  namespace: eclaim
+data:
+  ASPNETCORE_ENVIRONMENT: "Development"
+  FrontendBaseUrl: "http://localhost:30080"

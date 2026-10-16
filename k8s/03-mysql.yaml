@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data
+  namespace: eclaim
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eclaim-mysql
+  namespace: eclaim
+spec:
+  replicas: 1                    
+  strategy:
+    type: Recreate              
+  selector:
+    matchLabels:
+      app: eclaim-mysql
+  template:
+    metadata:
+      labels:
+        app: eclaim-mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_DATABASE
+              value: eclaimdb
+            - name: MYSQL_USER
+              value: eclaim
+            - name: MYSQL_PASSWORD
+              valueFrom: { secretKeyRef: { name: eclaim-secrets, key: MYSQL_PASSWORD } }
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom: { secretKeyRef: { name: eclaim-secrets, key: MYSQL_ROOT_PASSWORD } }
+          readinessProbe:       
+            tcpSocket:
+              port: 3306
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: mysql-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eclaim-mysql
+  namespace: eclaim
+spec:
+  selector:
+    app: eclaim-mysql
+  ports:
+    - port: 3306
+      targetPort: 3306

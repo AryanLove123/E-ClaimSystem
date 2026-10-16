@@ -4,6 +4,7 @@ using EClaim.Domain.Entities;
 using EClaim.Domain.Enums;
 using EClaim.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace EClaim.Application.Services;
 
@@ -15,15 +16,17 @@ public class AuthService : IAuthService
     private IJwtTokenGenerator _jwtTokenGenerator;
     private IEmailService _emailService;
     private IAuditService _auditService;
+    private IConfiguration _configuration;
 
 
-    public AuthService(IEClaimDbContext db, IPasswordHasher passwordHasher, IJwtTokenGenerator jwtTokenGenerator, IEmailService emailService, IAuditService auditService)
+    public AuthService(IEClaimDbContext db, IPasswordHasher passwordHasher, IJwtTokenGenerator jwtTokenGenerator, IEmailService emailService, IAuditService auditService, IConfiguration configuration)
     {
         _db = db;
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
         _emailService = emailService;
         _auditService = auditService;
+        _configuration = configuration;
     }
 
     public async Task<int> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
@@ -51,7 +54,11 @@ public class AuthService : IAuthService
             EmailVerificationTokenExpiresAt = DateTime.UtcNow.AddHours(24)
         };
 
-        var verifyLink = $"https://localhost:4200/verify-email?email={Uri.EscapeDataString(user.Email)}&token={user.EmailVerificationToken}";
+        context.Users.Add(user);
+        await context.SaveChangesAsync(ct);
+
+        var frontendBaseUrl = _configuration["FrontendBaseUrl"] ?? "http://localhost:4200";
+        var verifyLink = $"{frontendBaseUrl}/verify-email?email={Uri.EscapeDataString(user.Email)}&token={user.EmailVerificationToken}";
         await _emailService.SendEmailAsync(
             user.Email,
             "Verify your E-Claim account",
